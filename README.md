@@ -20,3 +20,7 @@ O **Simple Task Scheduler** é um sistema para automatização de alocação de 
 - Escopo Tecnológico: 
   - Tecnologias para desenvolvimento: [Go](https://golang.org/), Python, Shell script, [Redis](https://redis.io/) (possivelmente);
   - Tecnologias para gerência de projeto e comunicação: Trello ou Jira, Discord, Slack.
+  
+- Planejamento:
+
+  - Nossas tarefas estão organizadas em um modelo Kanban, localizado no [GitHub Projects deste repositório](https://github.com/lucasclopesr/Simple-Task-Scheduler/projects/1).
