@@ -6,6 +6,7 @@ O **Simple Task Scheduler** é um sistema para automatização de alocação de 
  - [Francisco Bonome Andrade](https://github.com/franciscobonand)
  - [Lucas Caetano Lopes Rodrigues](https://github.com/lucasclopesr)
  - [Pedro Tavares de Carvalho](https://github.com/ptcar2009)
+ - [Arthur Alves Melo dos Santos Pacheco](https://github.com/arthur-pacheco)
 
 ### Escopo
 
