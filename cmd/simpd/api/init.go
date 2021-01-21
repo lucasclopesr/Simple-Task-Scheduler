@@ -13,7 +13,7 @@ func (s *Server) Init(jobHandler handlers.JobHandler) {
 		handlers.JSON(handlers.HandleJobs),
 	).Methods("GET", "DELETE")
 
-	s.router.HandleFunc("queue",
+	s.router.HandleFunc("/queue",
 		handlers.JSON(handlers.HandleQueue),
 	).Methods("GET", "DELETE")
 
