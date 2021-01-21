@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// UnixSocketAddress é o endereço de comunicação em unix socket
 const UnixSocketAddress = "/var/run/insprd.sock"
 
 // NewUnixSocketClient returna um client que conecta via unix socket
