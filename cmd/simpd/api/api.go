@@ -6,8 +6,13 @@
 package api
 
 import (
+	"context"
+	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/transport"
@@ -34,7 +39,52 @@ func NewServer() (Server, error) {
 	}, nil
 }
 
+func (s *Server) serve(ctx context.Context) (err error) {
+	server := &http.Server{
+		Handler: s.router,
+	}
+	go func() {
+		if err = server.Serve(s.listener); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen:%v", err)
+		}
+	}()
+
+	log.Println("Listening...")
+	<-ctx.Done()
+	log.Printf("Gracefully shutting down...")
+
+	ctxShutdown, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second*5))
+	defer func() {
+		cancel()
+	}()
+
+	if err = server.Shutdown(ctxShutdown); err != nil {
+		log.Fatal("error shutting down server")
+	}
+
+	err = os.RemoveAll(transport.UnixSocketAddress)
+	if err != nil {
+		return err
+	}
+
+	log.Println("server shutdown complete")
+	if err == http.ErrServerClosed {
+		err = nil
+	}
+	return
+}
+
 // Run roda o servidor
 func (s *Server) Run() error {
-	return http.Serve(s.listener, s.router)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		oscall := <-c
+		log.Printf("system call:%+v", oscall)
+		cancel()
+	}()
+	return s.serve(ctx)
 }
