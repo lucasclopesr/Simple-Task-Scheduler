@@ -26,8 +26,6 @@ func handleGetJob(w http.ResponseWriter, r *http.Request) {
 		handleError(err, w, r)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 // HandlePostJob trata requisitos de m'etodo POST no caminho /job
@@ -49,7 +47,6 @@ func handlePostJob(w http.ResponseWriter, r *http.Request) {
 		handleError(err, w, r)
 	}
 
-	w.WriteHeader(http.StatusOK)
 }
 
 // HandleDeleteJob trata requisitos de m'etodo DELETE no caminho /job
@@ -63,7 +60,6 @@ func handleDeleteJob(w http.ResponseWriter, r *http.Request) {
 		handleError(err, w, r)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 // HandleJob trata a rota /job/{id_job}
