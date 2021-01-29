@@ -1,0 +1,10 @@
+[Unit]
+Description=Simp daemon for scheduling tasks
+After=network.target
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User={your user here}
+ExecStart=/usr/bin/env /usr/local/bin/simpd
