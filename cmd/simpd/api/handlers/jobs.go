@@ -23,7 +23,6 @@ func handleGetJobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 }
 
 // HandleDeleteQueue trata requisitos de m'etodo GET no caminho /queue
@@ -35,7 +34,6 @@ func handleDeleteJobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 }
 
 // HandleJobs trata a rota /jobs

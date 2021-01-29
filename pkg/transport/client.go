@@ -6,7 +6,7 @@ import (
 )
 
 // UnixSocketAddress é o endereço de comunicação em unix socket
-const UnixSocketAddress = "/var/run/insprd.sock"
+const UnixSocketAddress = "/tmp/simpd.sock"
 
 // NewUnixSocketClient returna um client que conecta via unix socket
 func NewUnixSocketClient() http.Client {
