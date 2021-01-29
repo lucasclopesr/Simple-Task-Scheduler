@@ -21,6 +21,8 @@ func handleError(err error, w http.ResponseWriter, r *http.Request) {
 			status = http.StatusTooManyRequests
 		case simperr.ErrorNotFound:
 			status = http.StatusNotFound
+		default:
+			status = http.StatusInternalServerError
 		}
 	}
 
