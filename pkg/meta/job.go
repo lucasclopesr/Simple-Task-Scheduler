@@ -1,11 +1,11 @@
 package meta
 
-// A Job is what compose the priority queue.
+// Job é a estrutura que contém as informações do job a ser executado pelo SO e
+// o index e prioridade referentes à sua posição na Fila de Prioridades
 type Job struct {
-	// The index is needed by update and is maintained by the heap.Interface methods.
-	Index         int      // The index of the Job in the heap.
-	ID            string   // The identifier of the Job.
-	Priority      int      // The priority of the Job in the queue.
-	ProcessName   string   // The process' executable name
-	ProcessParams []string // Process' inputed/needed parameters
+	Index         int // Index do Job no heap (Fila de Prioridades)
+	ID            string
+	Priority      int      // Prioridade de execução do Job
+	ProcessName   string   // Nome do processo a ser executado
+	ProcessParams []string // Parâmetros para execução de um processo
 }

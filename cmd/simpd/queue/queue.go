@@ -44,8 +44,8 @@ func (pq *SimpQueueManager) Pop() interface{} {
 	old := pq.simpQueue.Queue
 	n := len(old)
 	job := old[n-1]
-	old[n-1] = nil // avoid memory leak
-	job.Index = -1 // for safety
+	old[n-1] = nil
+	job.Index = -1
 	pq.simpQueue.Queue = old[0 : n-1]
 	return job
 }
@@ -64,7 +64,7 @@ func (pq *SimpQueueManager) GetJobFromQueue(jobID string) (*meta.Job, error) {
 func (pq *SimpQueueManager) InsertJobIntoQueue(job meta.Job) error {
 	_, err := pq.GetJobFromQueue(job.ID)
 	if err == nil {
-		return nil //retorna erro
+		return err
 	}
 	heap.Push(pq, job)
 	return nil
