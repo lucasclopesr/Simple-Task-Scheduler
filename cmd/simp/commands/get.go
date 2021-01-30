@@ -7,7 +7,7 @@ import (
 )
 
 func getJobCallback(cmd *cobra.Command, args []string) {
-	fmt.Println(*jobID)
+	fmt.Println("Get job =" + *jobID)
 }
 
 // GetJobCommand is a command to get a job
