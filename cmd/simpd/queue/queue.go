@@ -61,12 +61,14 @@ func (pq *SimpQueueManager) Pop() interface{} {
 }
 
 // GetJobFromQueue recebe o ID de um job e retorna-o, caso esteja na fila. Caso contrario, retorna erro
-func (pq *SimpQueueManager) GetJobFromQueue(jobID string) (*meta.Job, error) {
+func (pq *SimpQueueManager) GetJobFromQueue(jobID string) (job meta.Job, err error) {
 	jobIndex, exists := pq.simpQueue.IndexList[jobID]
 	if !exists {
-		return nil, simperr.NewError().NotFound().Message("coundn't find job " + jobID + " in queue").Build()
+		return meta.Job{}, simperr.NewError().NotFound().Message("coundn't find job " + jobID + " in queue").Build()
 	}
-	return pq.simpQueue.Queue[jobIndex], nil
+	job = *pq.simpQueue.Queue[jobIndex]
+	job.Index = -1
+	return
 }
 
 // InsertJobIntoQueue insere novo job na fila, caso não exista um com ID igual.
@@ -87,7 +89,7 @@ func (pq *SimpQueueManager) InsertJobIntoQueue(job meta.Job) error {
 
 // DeleteJobFromQueue remove um job da fila. Caso o job não esteja na fila, retorna um erro
 func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (meta.Job, error) {
-	job, err := pq.GetJobFromQueue(jobID)
+	_, err := pq.GetJobFromQueue(jobID)
 	if err != nil {
 		return meta.Job{}, err
 	}
@@ -95,10 +97,11 @@ func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (meta.Job, error) {
 	lock.Lock()
 	defer lock.Unlock()
 
-	removedJob := heap.Remove(pq, job.Index)
-	delete(pq.simpQueue.IndexList, job.ID)
+	index := pq.simpQueue.IndexList[jobID]
+	removedJob := heap.Remove(pq, index).(*meta.Job)
+	delete(pq.simpQueue.IndexList, jobID)
 
-	return *(removedJob.(*meta.Job)), nil
+	return *removedJob, nil
 }
 
 // UpdateQueuedJob atualiza as informações de um job que já se encontra na fila. Caso o job não seja
