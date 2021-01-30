@@ -2,10 +2,15 @@ package queue
 
 import (
 	"container/heap"
+	"sync"
 
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/meta"
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/simperr"
 )
+
+// lock é um mutex que será usado para garantir a execução correta
+// de funções que alteram a estrutura da fila e dos jobs inseridos nela
+var lock sync.Mutex
 
 // Len retorna o tamanho da Fila (quantos jobs estão nela)
 func (pq *SimpQueueManager) Len() int {
@@ -23,6 +28,8 @@ func (pq *SimpQueueManager) Swap(job1Index, job2Index int) {
 	job1ID := pq.simpQueue.Queue[job1Index].ID
 	job2ID := pq.simpQueue.Queue[job2Index].ID
 
+	lock.Lock()
+	defer lock.Unlock()
 	pq.simpQueue.Queue[job1Index], pq.simpQueue.Queue[job2Index] = pq.simpQueue.Queue[job2Index], pq.simpQueue.Queue[job1Index]
 	pq.simpQueue.Queue[job1Index].Index = job1Index
 	pq.simpQueue.Queue[job2Index].Index = job2Index
@@ -33,6 +40,9 @@ func (pq *SimpQueueManager) Swap(job1Index, job2Index int) {
 
 // Push insere job na Fila
 func (pq *SimpQueueManager) Push(h interface{}) {
+	lock.Lock()
+	defer lock.Unlock()
+
 	n := len(pq.simpQueue.Queue)
 	job := h.(*meta.Job)
 	job.Index = n
@@ -41,6 +51,9 @@ func (pq *SimpQueueManager) Push(h interface{}) {
 
 // Pop remove o job de maior prioridade da Fila
 func (pq *SimpQueueManager) Pop() interface{} {
+	lock.Lock()
+	defer lock.Unlock()
+
 	old := pq.simpQueue.Queue
 	n := len(old)
 	job := old[n-1]
@@ -71,14 +84,18 @@ func (pq *SimpQueueManager) InsertJobIntoQueue(job meta.Job) error {
 }
 
 // DeleteJobFromQueue remove um job da fila. Caso o job não esteja na fila, retorna um erro
-func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (interface{}, error) {
+func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (meta.Job, error) {
 	job, err := pq.GetJobFromQueue(jobID)
 	if err != nil {
-		return nil, err
+		return meta.Job{}, err
 	}
+
+	lock.Lock()
+	defer lock.Unlock()
+
 	removedJob := heap.Remove(pq, job.Index)
 
-	return removedJob, nil
+	return removedJob.(meta.Job), nil
 }
 
 // UpdateQueuedJob atualiza as informações de um job que já se encontra na fila. Caso o job não seja
@@ -92,6 +109,9 @@ func (pq *SimpQueueManager) UpdateQueuedJob(job meta.Job) error {
 	if oldJob.Index != job.Index {
 		return simperr.NewError().BadRequest().Message("can't change a job's Index attribute").Build()
 	}
+
+	lock.Lock()
+	defer lock.Unlock()
 
 	pq.simpQueue.Queue[job.Index].Priority = job.Priority
 	pq.simpQueue.Queue[job.Index].ProcessName = job.ProcessName
