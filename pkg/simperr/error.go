@@ -29,6 +29,12 @@ func (b *ErrorBuilder) Message(msg string) *ErrorBuilder {
 	return b
 }
 
+// Code define o código do SimpError
+func (b *ErrorBuilder) Code(code int) *ErrorBuilder {
+	b.err.Code = code
+	return b
+}
+
 // Build retorna o SimpError criado
 func (b *ErrorBuilder) Build() *SimpError {
 	return b.err
