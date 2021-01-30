@@ -40,7 +40,7 @@ func (b *ErrorBuilder) NotFound() *ErrorBuilder {
 	return b
 }
 
-// NotFound define o tipo de erro a ser usado quando uma estrutura não foi encontrada
+// BadRequest define o tipo de erro a ser usado quando é feita uma requisição inválida
 func (b *ErrorBuilder) BadRequest() *ErrorBuilder {
 	b.err.Code = ErrorBadRequest
 	return b
