@@ -7,7 +7,7 @@ import (
 )
 
 func getJobsCallback(cmd *cobra.Command, args []string) {
-	fmt.Println("Get all jobs")
+	fmt.Println("Get all running jobs")
 }
 
 // GetJobsCommand is a command to get all running jobs
