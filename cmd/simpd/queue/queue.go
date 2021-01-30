@@ -40,19 +40,16 @@ func (pq *SimpQueueManager) Swap(job1Index, job2Index int) {
 
 // Push insere job na Fila
 func (pq *SimpQueueManager) Push(h interface{}) {
-	lock.Lock()
-	defer lock.Unlock()
 
 	n := len(pq.simpQueue.Queue)
 	job := h.(*meta.Job)
 	job.Index = n
+	pq.simpQueue.IndexList[job.ID] = job.Index
 	pq.simpQueue.Queue = append(pq.simpQueue.Queue, job)
 }
 
 // Pop remove o job de maior prioridade da Fila
 func (pq *SimpQueueManager) Pop() interface{} {
-	lock.Lock()
-	defer lock.Unlock()
 
 	old := pq.simpQueue.Queue
 	n := len(old)
@@ -77,9 +74,14 @@ func (pq *SimpQueueManager) GetJobFromQueue(jobID string) (*meta.Job, error) {
 func (pq *SimpQueueManager) InsertJobIntoQueue(job meta.Job) error {
 	_, err := pq.GetJobFromQueue(job.ID)
 	if err == nil {
+		// Todo: retornar erro falando que job já existe
 		return err
 	}
-	heap.Push(pq, job)
+
+	lock.Lock()
+	defer lock.Unlock()
+
+	heap.Push(pq, &job)
 	return nil
 }
 
@@ -94,8 +96,9 @@ func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (meta.Job, error) {
 	defer lock.Unlock()
 
 	removedJob := heap.Remove(pq, job.Index)
+	delete(pq.simpQueue.IndexList, job.ID)
 
-	return removedJob.(meta.Job), nil
+	return *(removedJob.(*meta.Job)), nil
 }
 
 // UpdateQueuedJob atualiza as informações de um job que já se encontra na fila. Caso o job não seja

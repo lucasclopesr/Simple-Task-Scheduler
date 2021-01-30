@@ -27,6 +27,9 @@ func GetQueueManager() PQInterface {
 
 func newQueueManager() *SimpQueueManager {
 	return &SimpQueueManager{
-		simpQueue: &meta.PriorityQueue{},
+		simpQueue: &meta.PriorityQueue{
+			Queue:     []*meta.Job{},
+			IndexList: make(map[string]int),
+		},
 	}
 }
