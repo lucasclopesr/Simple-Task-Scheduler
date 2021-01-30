@@ -35,6 +35,8 @@ func Init(cl api.ClientInterface) {
 
 	simpCommand.AddCommand(&CreateJobCommand)
 	simpCommand.AddCommand(&DeleteJobCommand)
+	simpCommand.AddCommand(&GetJobCommand)
+
 	client = cl
 }
 
