@@ -37,10 +37,10 @@ func (j jobHandler) GetJob(s string) (meta.Job, error) {
 	job, err := queue.GetJobFromQueue(s)
 
 	if err == nil {
-		return *job, nil
+		return job, nil
 	}
 
-	return *job, err
+	return job, err
 }
 
 // GetExecutingJobs returns all currently executing jobs in the format meta.job
