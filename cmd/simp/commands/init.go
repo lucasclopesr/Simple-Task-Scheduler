@@ -23,7 +23,7 @@ var simpCommand = &cobra.Command{}
 
 var client api.ClientInterface
 
-// Init faz o parse dos parâmetros
+// Init faz o parse dos parâmetros e adiciona os comandos
 func Init(cl api.ClientInterface) {
 
 	jobID = CreateJobCommand.Flags().StringP("job_id", "i", "no-id", "the id for the job that will be created")
@@ -36,6 +36,7 @@ func Init(cl api.ClientInterface) {
 	simpCommand.AddCommand(&CreateJobCommand)
 	simpCommand.AddCommand(&DeleteJobCommand)
 	simpCommand.AddCommand(&GetJobCommand)
+	simpCommand.AddCommand(&GetJobsCommand)
 
 	client = cl
 }
