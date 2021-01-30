@@ -6,6 +6,8 @@ type Job struct {
 	Index         int // Index do Job no heap (Fila de Prioridades)
 	ID            string
 	Priority      int      // Prioridade de execução do Job
-	ProcessName   string   // Nome do processo a ser executado
+	ProcessName   string   // Caminho absoluto do processo a ser executado
 	ProcessParams []string // Parâmetros para execução de um processo
+	MinMemory     int      // Disponibilidade mínima de memória
+	MinCPU        int      // Disponibilidade mínima de CPU
 }

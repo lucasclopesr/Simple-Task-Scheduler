@@ -7,11 +7,10 @@ import (
 )
 
 func createJobCallback(cmd *cobra.Command, args []string) {
-	fmt.Println(*id)
+	fmt.Println(*jobID)
 	fmt.Println(*minCPU)
 	fmt.Println(*minMemory)
-	fmt.Println(*user)
-	fmt.Println(*jobArgs)
+	fmt.Println(*processParams)
 }
 
 // CreateJobCommand is a command to create a job
