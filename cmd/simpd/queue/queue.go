@@ -84,10 +84,10 @@ func (pq *SimpQueueManager) InsertJobIntoQueue(job meta.Job) error {
 }
 
 // DeleteJobFromQueue remove um job da fila. Caso o job não esteja na fila, retorna um erro
-func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (interface{}, error) {
+func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (meta.Job, error) {
 	job, err := pq.GetJobFromQueue(jobID)
 	if err != nil {
-		return nil, err
+		return meta.Job{}, err
 	}
 
 	lock.Lock()
@@ -95,7 +95,7 @@ func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (interface{}, error
 
 	removedJob := heap.Remove(pq, job.Index)
 
-	return removedJob, nil
+	return removedJob.(meta.Job), nil
 }
 
 // UpdateQueuedJob atualiza as informações de um job que já se encontra na fila. Caso o job não seja
