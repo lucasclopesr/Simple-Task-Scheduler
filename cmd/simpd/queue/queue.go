@@ -28,8 +28,8 @@ func (pq *SimpQueueManager) Swap(job1Index, job2Index int) {
 	job1ID := pq.simpQueue.Queue[job1Index].ID
 	job2ID := pq.simpQueue.Queue[job2Index].ID
 
-	lock.Lock()
-	defer lock.Unlock()
+	pq.Lock()
+	defer pq.Unlock()
 	pq.simpQueue.Queue[job1Index], pq.simpQueue.Queue[job2Index] = pq.simpQueue.Queue[job2Index], pq.simpQueue.Queue[job1Index]
 	pq.simpQueue.Queue[job1Index].Index = job1Index
 	pq.simpQueue.Queue[job2Index].Index = job2Index
@@ -53,10 +53,14 @@ func (pq *SimpQueueManager) Pop() interface{} {
 
 	old := pq.simpQueue.Queue
 	n := len(old)
+	if n == 0 {
+		return nil
+	}
 	job := old[n-1]
 	old[n-1] = nil
 	job.Index = -1
 	pq.simpQueue.Queue = old[0 : n-1]
+	delete(pq.simpQueue.IndexList, job.ID)
 	return job
 }
 
@@ -77,11 +81,11 @@ func (pq *SimpQueueManager) InsertJobIntoQueue(job meta.Job) error {
 	_, err := pq.GetJobFromQueue(job.ID)
 	if err == nil {
 		// Todo: retornar erro falando que job já existe
-		return err
+		return simperr.NewError().Build()
 	}
 
-	lock.Lock()
-	defer lock.Unlock()
+	pq.Lock()
+	defer pq.Unlock()
 
 	heap.Push(pq, &job)
 	return nil
@@ -94,8 +98,8 @@ func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (meta.Job, error) {
 		return meta.Job{}, err
 	}
 
-	lock.Lock()
-	defer lock.Unlock()
+	pq.Lock()
+	defer pq.Unlock()
 
 	index := pq.simpQueue.IndexList[jobID]
 	removedJob := heap.Remove(pq, index).(*meta.Job)
@@ -116,8 +120,8 @@ func (pq *SimpQueueManager) UpdateQueuedJob(job meta.Job) error {
 		return simperr.NewError().BadRequest().Message("can't change a job's Index attribute").Build()
 	}
 
-	lock.Lock()
-	defer lock.Unlock()
+	pq.Lock()
+	defer pq.Unlock()
 
 	pq.simpQueue.Queue[job.Index].Priority = job.Priority
 	pq.simpQueue.Queue[job.Index].ProcessName = job.ProcessName
@@ -125,4 +129,12 @@ func (pq *SimpQueueManager) UpdateQueuedJob(job meta.Job) error {
 
 	heap.Fix(pq, job.Index)
 	return nil
+}
+
+func (pq *SimpQueueManager) GetFrontJob() meta.Job {
+	pq.Lock()
+	defer pq.Unlock()
+
+	ret := pq.Pop()
+	return *(ret.(*meta.Job))
 }
