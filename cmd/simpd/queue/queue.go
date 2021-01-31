@@ -131,6 +131,7 @@ func (pq *SimpQueueManager) UpdateQueuedJob(job meta.Job) error {
 	return nil
 }
 
+// GetFrontJob retorna o primeiro job da fila
 func (pq *SimpQueueManager) GetFrontJob() meta.Job {
 	pq.Lock()
 	defer pq.Unlock()

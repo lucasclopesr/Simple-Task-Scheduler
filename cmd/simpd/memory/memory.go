@@ -10,6 +10,7 @@ import (
 var mem map[string]meta.Job = make(map[string]meta.Job)
 var lock sync.Mutex
 
+// CreateJob adiciona um Job na memória compartilhada de jobs
 func CreateJob(id string, job meta.Job) error {
 	lock.Lock()
 	defer lock.Unlock()
@@ -20,6 +21,7 @@ func CreateJob(id string, job meta.Job) error {
 	return nil
 }
 
+// DeleteJob remove um Job da memória compartilhada de jobs
 func DeleteJob(id string) error {
 	lock.Lock()
 	defer lock.Unlock()
@@ -30,6 +32,7 @@ func DeleteJob(id string) error {
 	return nil
 }
 
+// GetJob recupera um Job da memória compartilhada de jobs
 func GetJob(id string) (meta.Job, error) {
 	lock.Lock()
 	defer lock.Unlock()

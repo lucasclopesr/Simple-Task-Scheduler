@@ -11,6 +11,7 @@ import (
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/meta"
 )
 
+// ProcessManager é a interface que define os métodos do gerenciador de processos
 type ProcessManager interface {
 	Run(ctx context.Context, wg *sync.WaitGroup)
 	GetJob(id string) (meta.Job, error)
