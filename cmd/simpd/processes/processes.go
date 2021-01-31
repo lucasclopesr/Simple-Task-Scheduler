@@ -2,8 +2,11 @@ package processes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os/exec"
+	"os/user"
 	"sync"
 
 	"github.com/lucasclopesr/Simple-Task-Scheduler/cmd/simpd/memory"
@@ -20,19 +23,39 @@ type ProcessManager interface {
 
 var pm ProcessManager
 
+// Conf define a estrura do arquivo de configuração do SIMP
+type Conf struct {
+	MaxMemUsage int `json:"maxMemusage"` // Memory in bytes
+	MaxCPUUsage int `json:"maxCPUUsage"` // CPU cores
+}
+
 // GetProcessManager define a estrutura que consegue utilizar os métodos de envio de processos para execução na máquina
 func GetProcessManager() ProcessManager {
 	if pm == nil {
-		pm = newProcessManager()
+		// Get params from config file
+		config := Conf{}
+
+		usr, err := user.Current()
+		homeFolder := fmt.Sprintf("%s/.simp/config.json", usr.HomeDir)
+		println(homeFolder)
+		configFile, err := ioutil.ReadFile(homeFolder)
+
+		if err == nil {
+			err = json.Unmarshal(configFile, &config)
+		} else {
+			panic("Config file not found!")
+		}
+
+		pm = newProcessManager(config.MaxMemUsage, config.MaxCPUUsage)
 	}
 	return pm
 }
 
-func newProcessManager() ProcessManager {
+func newProcessManager(maxMemUsage int, maxCPUUsage int) ProcessManager {
 	return &processes{
-		maxMemUsage:   100,
+		maxMemUsage:   maxMemUsage,
 		curMemUsage:   0,
-		maxCPUUsage:   100,
+		maxCPUUsage:   maxCPUUsage,
 		curCPUUsage:   0,
 		release:       make(chan bool),
 		Mutex:         sync.Mutex{},
