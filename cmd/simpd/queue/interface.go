@@ -10,8 +10,9 @@ import (
 // utilizados para manipulação da estrutura Fila de Prioridades
 type PQInterface interface {
 	heap.Interface
-	GetJobFromQueue(jobID string) (*meta.Job, error)
+	GetJobFromQueue(jobID string) (meta.Job, error)
 	InsertJobIntoQueue(job meta.Job) error
 	DeleteJobFromQueue(jobID string) (meta.Job, error)
 	UpdateQueuedJob(job meta.Job) error
+	GetFrontJob() meta.Job
 }

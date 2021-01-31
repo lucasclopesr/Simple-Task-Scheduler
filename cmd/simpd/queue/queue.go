@@ -28,8 +28,8 @@ func (pq *SimpQueueManager) Swap(job1Index, job2Index int) {
 	job1ID := pq.simpQueue.Queue[job1Index].ID
 	job2ID := pq.simpQueue.Queue[job2Index].ID
 
-	lock.Lock()
-	defer lock.Unlock()
+	pq.Lock()
+	defer pq.Unlock()
 	pq.simpQueue.Queue[job1Index], pq.simpQueue.Queue[job2Index] = pq.simpQueue.Queue[job2Index], pq.simpQueue.Queue[job1Index]
 	pq.simpQueue.Queue[job1Index].Index = job1Index
 	pq.simpQueue.Queue[job2Index].Index = job2Index
@@ -40,36 +40,39 @@ func (pq *SimpQueueManager) Swap(job1Index, job2Index int) {
 
 // Push insere job na Fila
 func (pq *SimpQueueManager) Push(h interface{}) {
-	lock.Lock()
-	defer lock.Unlock()
 
 	n := len(pq.simpQueue.Queue)
 	job := h.(*meta.Job)
 	job.Index = n
+	pq.simpQueue.IndexList[job.ID] = job.Index
 	pq.simpQueue.Queue = append(pq.simpQueue.Queue, job)
 }
 
 // Pop remove o job de maior prioridade da Fila
 func (pq *SimpQueueManager) Pop() interface{} {
-	lock.Lock()
-	defer lock.Unlock()
 
 	old := pq.simpQueue.Queue
 	n := len(old)
+	if n == 0 {
+		return nil
+	}
 	job := old[n-1]
 	old[n-1] = nil
 	job.Index = -1
 	pq.simpQueue.Queue = old[0 : n-1]
+	delete(pq.simpQueue.IndexList, job.ID)
 	return job
 }
 
 // GetJobFromQueue recebe o ID de um job e retorna-o, caso esteja na fila. Caso contrario, retorna erro
-func (pq *SimpQueueManager) GetJobFromQueue(jobID string) (*meta.Job, error) {
+func (pq *SimpQueueManager) GetJobFromQueue(jobID string) (job meta.Job, err error) {
 	jobIndex, exists := pq.simpQueue.IndexList[jobID]
 	if !exists {
-		return nil, simperr.NewError().NotFound().Message("coundn't find job " + jobID + " in queue").Build()
+		return meta.Job{}, simperr.NewError().NotFound().Message("coundn't find job " + jobID + " in queue").Build()
 	}
-	return pq.simpQueue.Queue[jobIndex], nil
+	job = *pq.simpQueue.Queue[jobIndex]
+	job.Index = -1
+	return
 }
 
 // InsertJobIntoQueue insere novo job na fila, caso não exista um com ID igual.
@@ -77,25 +80,32 @@ func (pq *SimpQueueManager) GetJobFromQueue(jobID string) (*meta.Job, error) {
 func (pq *SimpQueueManager) InsertJobIntoQueue(job meta.Job) error {
 	_, err := pq.GetJobFromQueue(job.ID)
 	if err == nil {
-		return err
+		// Todo: retornar erro falando que job já existe
+		return simperr.NewError().Build()
 	}
-	heap.Push(pq, job)
+
+	pq.Lock()
+	defer pq.Unlock()
+
+	heap.Push(pq, &job)
 	return nil
 }
 
 // DeleteJobFromQueue remove um job da fila. Caso o job não esteja na fila, retorna um erro
 func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (meta.Job, error) {
-	job, err := pq.GetJobFromQueue(jobID)
+	_, err := pq.GetJobFromQueue(jobID)
 	if err != nil {
 		return meta.Job{}, err
 	}
 
-	lock.Lock()
-	defer lock.Unlock()
+	pq.Lock()
+	defer pq.Unlock()
 
-	removedJob := heap.Remove(pq, job.Index)
+	index := pq.simpQueue.IndexList[jobID]
+	removedJob := heap.Remove(pq, index).(*meta.Job)
+	delete(pq.simpQueue.IndexList, jobID)
 
-	return removedJob.(meta.Job), nil
+	return *removedJob, nil
 }
 
 // UpdateQueuedJob atualiza as informações de um job que já se encontra na fila. Caso o job não seja
@@ -110,8 +120,8 @@ func (pq *SimpQueueManager) UpdateQueuedJob(job meta.Job) error {
 		return simperr.NewError().BadRequest().Message("can't change a job's Index attribute").Build()
 	}
 
-	lock.Lock()
-	defer lock.Unlock()
+	pq.Lock()
+	defer pq.Unlock()
 
 	pq.simpQueue.Queue[job.Index].Priority = job.Priority
 	pq.simpQueue.Queue[job.Index].ProcessName = job.ProcessName
@@ -119,4 +129,13 @@ func (pq *SimpQueueManager) UpdateQueuedJob(job meta.Job) error {
 
 	heap.Fix(pq, job.Index)
 	return nil
+}
+
+// GetFrontJob retorna o primeiro job da fila
+func (pq *SimpQueueManager) GetFrontJob() meta.Job {
+	pq.Lock()
+	defer pq.Unlock()
+
+	ret := pq.Pop()
+	return *(ret.(*meta.Job))
 }
