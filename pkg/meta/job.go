@@ -9,4 +9,5 @@ type Job struct {
 	ProcessName       string   // Nome do processo a ser executado
 	ProcessParams     []string // Parâmetros para execução de um processo
 	MinCPU, MinMemory int
+	WorkingDirectory  string
 }

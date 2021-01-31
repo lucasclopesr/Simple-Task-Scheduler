@@ -19,12 +19,14 @@ type ProcessManager interface {
 
 var pm ProcessManager
 
+// GetProcessManager define a estrutura que consegue utilizar os métodos de envio de processos para execução na máquina
 func GetProcessManager() ProcessManager {
 	if pm == nil {
 		pm = newProcessManager()
 	}
 	return pm
 }
+
 func newProcessManager() ProcessManager {
 	return &processes{
 		maxMemUsage:   100,
@@ -54,6 +56,7 @@ type processes struct {
 func (p *processes) CreateFirstJob() {
 	p.hasJobInFront <- true
 }
+
 func (p *processes) Run(ctx context.Context, wg *sync.WaitGroup) {
 	go func() {
 		for {
@@ -88,6 +91,7 @@ func (p *processes) startJob(ctx context.Context, job meta.Job) {
 	p.curMemUsage += job.MinMemory
 	go func() {
 		cmd := exec.CommandContext(ctx, job.ProcessName, job.ProcessParams...)
+		cmd.Dir = job.WorkingDirectory
 
 		_, err := cmd.CombinedOutput()
 		if err != nil {

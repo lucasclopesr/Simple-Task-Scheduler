@@ -19,7 +19,7 @@ type jobHandler struct{}
 // CreateJob validates job and inserts into queue
 func (j jobHandler) CreateJob(s string, jr meta.JobRequest) error {
 	if _, err := memory.GetJob(s); err == nil {
-		return simperr.NewError().Build()
+		return simperr.NewError().AlreadyExists().Build()
 	}
 	queue := queue.GetQueueManager()
 	err := queue.InsertJobIntoQueue(jr.Job)
@@ -33,7 +33,7 @@ func (j jobHandler) CreateJob(s string, jr meta.JobRequest) error {
 // DeleteJob deletes a job from queue
 func (j jobHandler) DeleteJob(s string) error {
 	if _, err := memory.GetJob(s); err != nil {
-		return simperr.NewError().Build()
+		return simperr.NewError().DoesNotExist().Build()
 	}
 	queue := queue.GetQueueManager()
 	_, err := queue.DeleteJobFromQueue(s)
@@ -45,7 +45,7 @@ func (j jobHandler) DeleteJob(s string) error {
 func (j jobHandler) GetJob(s string) (job meta.Job, err error) {
 
 	if job, err = memory.GetJob(s); err != nil {
-		return job, simperr.NewError().Build()
+		return job, simperr.NewError().DoesNotExist().Build()
 	}
 	return job, err
 }
