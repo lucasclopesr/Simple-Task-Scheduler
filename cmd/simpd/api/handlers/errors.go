@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/simperr"
@@ -21,7 +22,10 @@ func handleError(err error, w http.ResponseWriter, r *http.Request) {
 			status = http.StatusTooManyRequests
 		case simperr.ErrorNotFound:
 			status = http.StatusNotFound
+		case simperr.ErrorDoesNotExist:
+			status = http.StatusNotFound
 		default:
+			fmt.Println(err)
 			status = http.StatusInternalServerError
 		}
 	}
