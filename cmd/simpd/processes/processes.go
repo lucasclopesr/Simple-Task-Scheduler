@@ -39,15 +39,16 @@ func GetProcessManager() ProcessManager {
 
 		usr, err := user.Current()
 		homeFolder := fmt.Sprintf("%s/.simp/config.json", usr.HomeDir)
-		println(homeFolder)
 		configFile, err := ioutil.ReadFile(homeFolder)
 
 		if err == nil {
 			err = json.Unmarshal(configFile, &config)
 		} else {
-			panic("Config file not found!")
+			config.MaxCPUUsage = 100
+			config.MaxCPUUsage = 100
+			byt, _ := json.MarshalIndent(config, "", "    ")
+			ioutil.WriteFile(homeFolder, byt, 0777)
 		}
-
 		pm = newProcessManager(config.MaxMemUsage, config.MaxCPUUsage)
 	}
 	return pm
@@ -55,15 +56,16 @@ func GetProcessManager() ProcessManager {
 
 func newProcessManager(maxMemUsage int, maxCPUUsage int) ProcessManager {
 	return &processes{
-		maxMemUsage:   maxMemUsage,
-		curMemUsage:   0,
-		maxCPUUsage:   maxCPUUsage,
-		curCPUUsage:   0,
-		release:       make(chan bool),
-		Mutex:         sync.Mutex{},
-		queue:         queue.GetQueueManager(),
-		hasJobInFront: make(chan bool),
-		processQueue:  make(chan meta.Job),
+		maxMemUsage:         maxMemUsage,
+		curMemUsage:         0,
+		maxCPUUsage:         maxCPUUsage,
+		curCPUUsage:         0,
+		release:             make(chan bool),
+		Mutex:               sync.Mutex{},
+		queue:               queue.GetQueueManager(),
+		hasJobInFront:       make(chan bool),
+		processQueue:        make(chan meta.Job),
+		processesContextMap: make(map[string]context.CancelFunc),
 	}
 }
 
@@ -123,14 +125,16 @@ func (p *processes) startJob(ctx context.Context, job meta.Job) {
 	go func() {
 		cmd := exec.CommandContext(jobCxt, job.ProcessName, job.ProcessParams...)
 		cmd.Dir = job.WorkingDirectory
-		done := make(chan bool, 1)
-
+		done := make(chan error, 1)
 		go func() {
-			cmd.Run()
-			done <- true
+			err := cmd.Run()
+			done <- err
 		}()
 
-		<-done
+		err := <-done
+		if err != nil && err.Error() != "signal: killed" {
+			fmt.Println(err)
+		}
 		p.releaseJob(job)
 	}()
 }
