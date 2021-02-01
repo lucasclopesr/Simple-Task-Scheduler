@@ -48,7 +48,7 @@ func (c *Client) sendRequest(route string, body []byte, method string) ([]byte, 
 // CreateJob sends a request to create a new job in the simp daemon
 func (c *Client) CreateJob(request meta.JobRequest, id string) error {
 	body, _ := json.Marshal(request)
-	_, err := c.sendRequest("job/"+id, body, "POST")
+	_, err := c.sendRequest("queue/"+id, body, "POST")
 	if err != nil {
 		return &simperr.SimpError{
 			Code:    simperr.ErrorNotFound,
@@ -58,8 +58,8 @@ func (c *Client) CreateJob(request meta.JobRequest, id string) error {
 	return nil
 }
 
-// DeleteJob sends a request to delete a job in the simp daemon
-func (c *Client) DeleteJob(id string) error {
+// DeleteExecutingJob sends a request to delete a job in the simp daemon
+func (c *Client) DeleteExecutingJob(id string) error {
 	_, err := c.sendRequest("job/"+id, nil, "DELETE")
 	if err != nil {
 		return &simperr.SimpError{
@@ -70,9 +70,34 @@ func (c *Client) DeleteJob(id string) error {
 	return nil
 }
 
-// GetJob gets a job from the simp daemon
-func (c *Client) GetJob(id string) (job meta.Job, err error) {
+// DeleteJobFromQueue sends a request to delete a job in the simp daemon
+func (c *Client) DeleteJobFromQueue(id string) error {
+	_, err := c.sendRequest("queue/"+id, nil, "DELETE")
+	if err != nil {
+		return &simperr.SimpError{
+			Code:    simperr.ErrorNotFound,
+			Message: err.Error(),
+		}
+	}
+	return nil
+}
+
+// GetExecutingJob gets a job from the simp daemon
+func (c *Client) GetExecutingJob(id string) (job meta.Job, err error) {
 	resp, err := c.sendRequest("job/"+id, nil, "GET")
+	if err != nil {
+		return meta.Job{}, &simperr.SimpError{
+			Code:    simperr.ErrorNotFound,
+			Message: err.Error(),
+		}
+	}
+	json.Unmarshal(resp, &job)
+	return
+}
+
+// GetJobFromQueue gets a job from the simp daemon queue
+func (c *Client) GetJobFromQueue(id string) (job meta.Job, err error) {
+	resp, err := c.sendRequest("queue/"+id, nil, "GET")
 	if err != nil {
 		return meta.Job{}, &simperr.SimpError{
 			Code:    simperr.ErrorNotFound,
@@ -98,7 +123,7 @@ func (c *Client) GetExecutingJobs() (jobs []meta.Job, err error) {
 
 // GetQueuedJobs gets the queued jobs from the simp daemon
 func (c *Client) GetQueuedJobs() (jobs []meta.Job, err error) {
-	resp, err := c.sendRequest("queue", nil, "GET")
+	resp, err := c.sendRequest("queued", nil, "GET")
 	if err != nil {
 		return nil, &simperr.SimpError{
 			Code:    simperr.ErrorNotFound,
@@ -111,7 +136,7 @@ func (c *Client) GetQueuedJobs() (jobs []meta.Job, err error) {
 
 // DeleteQueue deletes the queued jobs from the simp daemon
 func (c *Client) DeleteQueue() error {
-	_, err := c.sendRequest("queue", nil, "DELETE")
+	_, err := c.sendRequest("queued", nil, "DELETE")
 	if err != nil {
 		return &simperr.SimpError{
 			Code:    simperr.ErrorNotFound,
