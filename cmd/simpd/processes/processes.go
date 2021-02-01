@@ -12,6 +12,7 @@ import (
 	"github.com/lucasclopesr/Simple-Task-Scheduler/cmd/simpd/memory"
 	"github.com/lucasclopesr/Simple-Task-Scheduler/cmd/simpd/queue"
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/meta"
+	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/simperr"
 )
 
 // ProcessManager é a interface que define os métodos do gerenciador de processos
@@ -19,6 +20,7 @@ type ProcessManager interface {
 	Run(ctx context.Context, wg *sync.WaitGroup)
 	GetJob(id string) (meta.Job, error)
 	CreateFirstJob()
+	DeleteJob(jobID string) error
 }
 
 var pm ProcessManager
@@ -75,6 +77,7 @@ type processes struct {
 	queue         queue.PQInterface
 	hasJobInFront chan bool
 	sync.Mutex
+	processesContextMap map[string]context.CancelFunc
 }
 
 func (p *processes) CreateFirstJob() {
@@ -113,14 +116,21 @@ func (p *processes) GetJob(jobID string) (job meta.Job, err error) {
 func (p *processes) startJob(ctx context.Context, job meta.Job) {
 	p.curCPUUsage += job.MinCPU
 	p.curMemUsage += job.MinMemory
-	go func() {
-		cmd := exec.CommandContext(ctx, job.ProcessName, job.ProcessParams...)
-		cmd.Dir = job.WorkingDirectory
+	jobCxt, jobCancel := context.WithCancel(ctx)
 
-		_, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Println(err)
-		}
+	p.processesContextMap[job.ID] = jobCancel
+
+	go func() {
+		cmd := exec.CommandContext(jobCxt, job.ProcessName, job.ProcessParams...)
+		cmd.Dir = job.WorkingDirectory
+		done := make(chan bool, 1)
+
+		go func() {
+			cmd.Run()
+			done <- true
+		}()
+
+		<-done
 		p.releaseJob(job)
 	}()
 }
@@ -130,5 +140,19 @@ func (p *processes) releaseJob(job meta.Job) {
 	defer p.Unlock()
 	p.curCPUUsage -= job.MinCPU
 	p.curMemUsage -= job.MinMemory
+	delete(p.processesContextMap, job.ID)
 	memory.DeleteJob(job.ID)
+}
+
+// DeleteJob cancela o contexto de execução de um job e, assim, encerra sua execução
+func (p *processes) DeleteJob(jobID string) error {
+	p.Lock()
+	defer p.Unlock()
+	if cancel, ok := p.processesContextMap[jobID]; ok {
+		cancel()
+	} else {
+		return simperr.NewError().DoesNotExist().Message("couldn't find job for given ID").Build()
+	}
+
+	return nil
 }

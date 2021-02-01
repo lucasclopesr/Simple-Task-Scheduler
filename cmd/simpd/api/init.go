@@ -7,15 +7,19 @@ import "github.com/lucasclopesr/Simple-Task-Scheduler/cmd/simpd/api/handlers"
 func (s *Server) Init(jobHandler handlers.JobHandler) {
 	s.router.HandleFunc("/job/{id_job}",
 		handlers.JSON(handlers.HandleJob),
-	).Methods("GET", "POST", "DELETE")
+	).Methods("GET", "DELETE")
 
 	s.router.HandleFunc("/jobs",
 		handlers.JSON(handlers.HandleJobs),
 	).Methods("GET", "DELETE")
 
-	s.router.HandleFunc("/queue",
+	s.router.HandleFunc("/queued",
 		handlers.JSON(handlers.HandleQueue),
 	).Methods("GET", "DELETE")
+
+	s.router.HandleFunc("/queue/{id_job}",
+		handlers.JSON(handlers.HandleQueue),
+	).Methods("POST", "GET", "DELETE")
 
 	// especifica o objeto que fará alteração nos jobs e processos
 	handlers.SetJobHandler(jobHandler)

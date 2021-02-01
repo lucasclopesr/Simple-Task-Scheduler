@@ -28,34 +28,13 @@ func handleGetJob(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// HandlePostJob trata requisitos de m'etodo POST no caminho /job
-func handlePostJob(w http.ResponseWriter, r *http.Request) {
-	var job meta.JobRequest
-
-	vars := mux.Vars(r)
-	jobID := vars["id_job"]
-
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&job)
-	if err != nil {
-		handleError(err, w, r)
-		return
-	}
-
-	err = jh.CreateJob(jobID, job)
-	if err != nil {
-		handleError(err, w, r)
-	}
-
-}
-
 // HandleDeleteJob trata requisitos de m'etodo DELETE no caminho /job
 func handleDeleteJob(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	jobID := vars["id_job"]
 
-	err := jh.DeleteJob(jobID)
+	err := jh.DeleteExecutingJob(jobID)
 	if err != nil {
 		handleError(err, w, r)
 		return
@@ -67,8 +46,6 @@ func HandleJob(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		handleGetJob(w, r)
-	case http.MethodPost:
-		handlePostJob(w, r)
 	case http.MethodDelete:
 		handleDeleteJob(w, r)
 	}
