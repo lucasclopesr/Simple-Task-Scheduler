@@ -92,7 +92,7 @@ func Test_jobHandler_DeleteJob(t *testing.T) {
 				tt.j.CreateJob(tt.args.s, *tt.init)
 			}
 
-			if err := tt.j.DeleteJob(tt.args.s); (err != nil) != tt.wantErr {
+			if err := tt.j.DeleteJobFromQueue(tt.args.s); (err != nil) != tt.wantErr {
 				t.Errorf("jobHandler.DeleteJob() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
