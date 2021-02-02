@@ -45,15 +45,15 @@ func (c *Client) sendRequest(route string, body []byte, method string) ([]byte, 
 // CreateJob cria um job no simp daemon
 func (c *Client) CreateJob(request meta.JobRequest, id string) error {
 	body, _ := json.Marshal(request)
-	_, err := c.sendRequest("job/"+id, body, "POST")
+	_, err := c.sendRequest("queue/"+id, body, "POST")
 	if err != nil {
 		return simperr.NewError().Message(err.Error()).NotFound().Build()
 	}
 	return nil
 }
 
-// DeleteJob deleta um job no simp daemon
-func (c *Client) DeleteJob(id string) error {
+// DeleteExecutingJob sends a request to delete a job in the simp daemon
+func (c *Client) DeleteExecutingJob(id string) error {
 	_, err := c.sendRequest("job/"+id, nil, "DELETE")
 	if err != nil {
 		return simperr.NewError().Message(err.Error()).NotFound().Build()
@@ -61,8 +61,20 @@ func (c *Client) DeleteJob(id string) error {
 	return nil
 }
 
-// GetJob pega um job no simp daemon
-func (c *Client) GetJob(id string) (job meta.Job, err error) {
+// DeleteJobFromQueue sends a request to delete a job in the simp daemon
+func (c *Client) DeleteJobFromQueue(id string) error {
+	_, err := c.sendRequest("queue/"+id, nil, "DELETE")
+	if err != nil {
+		return &simperr.SimpError{
+			Code:    simperr.ErrorNotFound,
+			Message: err.Error(),
+		}
+	}
+	return nil
+}
+
+// GetExecutingJob gets a job from the simp daemon
+func (c *Client) GetExecutingJob(id string) (job meta.Job, err error) {
 	resp, err := c.sendRequest("job/"+id, nil, "GET")
 	if err != nil {
 		return job, simperr.NewError().Message(err.Error()).NotFound().Build()
@@ -71,7 +83,20 @@ func (c *Client) GetJob(id string) (job meta.Job, err error) {
 	return
 }
 
-// GetExecutingJobs pega os jobs executando no simp daemon
+// GetJobFromQueue gets a job from the simp daemon queue
+func (c *Client) GetJobFromQueue(id string) (job meta.Job, err error) {
+	resp, err := c.sendRequest("queue/"+id, nil, "GET")
+	if err != nil {
+		return meta.Job{}, &simperr.SimpError{
+			Code:    simperr.ErrorNotFound,
+			Message: err.Error(),
+		}
+	}
+	json.Unmarshal(resp, &job)
+	return
+}
+
+// GetExecutingJobs gets the current executing jobs from the simp daemon
 func (c *Client) GetExecutingJobs() (jobs []meta.Job, err error) {
 	resp, err := c.sendRequest("jobs", nil, "GET")
 	if err != nil {
@@ -83,7 +108,7 @@ func (c *Client) GetExecutingJobs() (jobs []meta.Job, err error) {
 
 // GetQueuedJobs pega os jobs enfilerados no simp daemon
 func (c *Client) GetQueuedJobs() (jobs []meta.Job, err error) {
-	resp, err := c.sendRequest("queue", nil, "GET")
+	resp, err := c.sendRequest("queued", nil, "GET")
 	if err != nil {
 		return nil, simperr.NewError().Message(err.Error()).NotFound().Build()
 	}
@@ -93,7 +118,7 @@ func (c *Client) GetQueuedJobs() (jobs []meta.Job, err error) {
 
 // DeleteQueue deleta os jobs enfilerados no simp daemon
 func (c *Client) DeleteQueue() error {
-	_, err := c.sendRequest("queue", nil, "DELETE")
+	_, err := c.sendRequest("queued", nil, "DELETE")
 	if err != nil {
 		return simperr.NewError().Message(err.Error()).NotFound().Build()
 	}

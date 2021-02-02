@@ -27,7 +27,19 @@ func (j jobHandlerMock) CreateJob(s string, jr meta.JobRequest) error {
 }
 
 // DeleteJob mock
-func (j jobHandlerMock) DeleteJob(s string) error {
+func (j jobHandlerMock) DeleteExecutingJob(s string) error {
+	if _, ok := j[s]; !ok {
+		return &simperr.SimpError{
+			Code:    403,
+			Message: "job not found",
+		}
+	}
+	delete(j, s)
+	return nil
+}
+
+// DeleteJob mock
+func (j jobHandlerMock) DeleteJobFromQueue(s string) error {
 	if _, ok := j[s]; !ok {
 		return &simperr.SimpError{
 			Code:    403,

@@ -1,0 +1,1 @@
+echo "hello world" >> teste.txt
