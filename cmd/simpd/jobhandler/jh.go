@@ -52,13 +52,16 @@ func (j jobHandler) GetJob(jobID string) (job meta.Job, err error) {
 
 // GetExecutingJobs retorna todos os jobs em execução
 func (j jobHandler) GetExecutingJobs() ([]meta.Job, error) {
-	ret := []meta.Job{}
-	return ret, nil // Todo: implement
+	ret, err := processes.GetProcessManager().GetAllJobs()
+
+	return ret, err
 }
 
 // DeleteExecutingJobs deleta todos os jobs em execução
 func (j *jobHandler) DeleteExecutingJobs() error {
-	return nil // Todo: implement
+	processes.GetProcessManager().DeleteAllJobs()
+
+	return nil
 }
 
 // GetQueuedJobs retorna todos os jobs que se encontram na Fila de Prioridades.
@@ -69,12 +72,23 @@ func (j jobHandler) GetQueuedJobs() ([]meta.Job, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return ret, nil
 }
 
 // DeleteQueuedJobs deleta todos os jobs da fila de prioridades
 func (j *jobHandler) DeleteQueuedJobs() error {
-	return nil // Todo: implement
+	ret, err := queue.GetQueueManager().ReturnAllQueuedJobs()
+
+	if err != nil {
+		return err
+	}
+
+	for _, job := range ret {
+		processes.GetProcessManager().DeleteJob(job.ID)
+	}
+
+	return nil
 }
 
 // DeleteExecutingJob deleta job em execução, caso exista. Caso contrário,
@@ -84,6 +98,6 @@ func (j jobHandler) DeleteExecutingJob(jobID string) error {
 	if err != nil {
 		return err
 	}
-	memory.DeleteJob(jobID)
+
 	return nil
 }
