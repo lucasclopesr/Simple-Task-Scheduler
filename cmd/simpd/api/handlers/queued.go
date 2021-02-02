@@ -39,8 +39,8 @@ func handleDeleteQueued(w http.ResponseWriter, r *http.Request) {
 func HandleQueued(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		handleGetQueue(w, r)
+		handleGetQueued(w, r)
 	case http.MethodDelete:
-		handleDeleteQueue(w, r)
+		handleDeleteQueued(w, r)
 	}
 }
