@@ -21,6 +21,8 @@ type ProcessManager interface {
 	GetJob(id string) (meta.Job, error)
 	CreateFirstJob()
 	DeleteJob(jobID string) error
+	DeleteAllJobs() error
+	GetAllJobs() ([]meta.Job, error)
 }
 
 var pm ProcessManager
@@ -111,8 +113,26 @@ func (p *processes) Run(ctx context.Context, wg *sync.WaitGroup) {
 		}
 	}()
 }
+
 func (p *processes) GetJob(jobID string) (job meta.Job, err error) {
 	return memory.GetJob(jobID)
+}
+
+func (p *processes) GetAllJobs() (ret []meta.Job, err error) {
+	p.Lock()
+	defer p.Unlock()
+
+	for id := range p.processesContextMap {
+		job, err := memory.GetJob(id)
+
+		if err != nil {
+			return nil, err
+		}
+
+		ret = append(ret, job)
+	}
+
+	return
 }
 
 func (p *processes) startJob(ctx context.Context, job meta.Job) {
@@ -125,13 +145,9 @@ func (p *processes) startJob(ctx context.Context, job meta.Job) {
 	go func() {
 		cmd := exec.CommandContext(jobCxt, job.ProcessName, job.ProcessParams...)
 		cmd.Dir = job.WorkingDirectory
-		done := make(chan error, 1)
-		go func() {
-			err := cmd.Run()
-			done <- err
-		}()
 
-		err := <-done
+		err := cmd.Run()
+
 		if err != nil && err.Error() != "signal: killed" {
 			fmt.Println(err)
 		}
@@ -156,6 +172,16 @@ func (p *processes) DeleteJob(jobID string) error {
 		cancel()
 	} else {
 		return simperr.NewError().DoesNotExist().Message("couldn't find job for given ID").Build()
+	}
+
+	return nil
+}
+
+func (p *processes) DeleteAllJobs() error {
+	p.Lock()
+	defer p.Unlock()
+	for _, cancel := range p.processesContextMap {
+		cancel()
 	}
 
 	return nil
