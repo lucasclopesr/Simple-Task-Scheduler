@@ -13,8 +13,8 @@ func getExecutingJobCallback(cmd *cobra.Command, args []string) {
 // GetExecutingJobCommand is a command to get a job
 var GetExecutingJobCommand = *&cobra.Command{
 	Aliases: []string{"new"},
-	Long:    "get executing job in the simpd",
-	Short:   "get executing job in the simpd",
+	Long:    "retorna um job em execução no STS",
+	Short:   "retorna um job em execução no STS",
 	Run:     getExecutingJobCallback,
 	Use:     "getExecutingJob",
 }
