@@ -38,8 +38,8 @@ func Init(cl api.ClientInterface) {
 	CreateJobCommand.MarkFlagRequired("name")
 	CreateJobCommand.MarkFlagFilename("name", "sh")
 	CreateJobCommand.Flags().StringArrayVar(&params.processParams, "args", []string{}, "Argumentos do job que será criado (Array de Strings)")
-	CreateJobCommand.Flags().IntVarP(&params.minMemory, "mem", "m", 50, "Mínimo de memória disponível para execução do job (0-100)")
-	CreateJobCommand.Flags().IntVarP(&params.minCPU, "cpu", "c", 50, "Mínimo de CPU disponível para a execução do job (0-100)")
+	CreateJobCommand.Flags().IntVarP(&params.minMemory, "mem", "m", 10, "Mínimo de memória disponível para execução do job (0-100)")
+	CreateJobCommand.Flags().IntVarP(&params.minCPU, "cpu", "c", 1, "Mínimo de CPU disponível para a execução do job (0-100)")
 	CreateJobCommand.Flags().StringVarP(&params.workingDirectory, "work_dir", "w", workingDir, "Diretório de trabalho do job (String)")
 
 	DeleteQueue.Flags().StringVarP(&params.jobID, "job_id", "i", "no-id", "ID do job que será criado (Inteiro)")

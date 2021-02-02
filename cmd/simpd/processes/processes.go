@@ -23,6 +23,7 @@ type ProcessManager interface {
 	DeleteJob(jobID string) error
 	DeleteAllJobs() error
 	GetAllJobs() ([]meta.Job, error)
+	IsJobResourceValid(jobMinMemory, jobMinCPU int) error
 }
 
 var pm ProcessManager
@@ -46,7 +47,7 @@ func GetProcessManager() ProcessManager {
 		if err == nil {
 			err = json.Unmarshal(configFile, &config)
 		} else {
-			config.MaxCPUUsage = 100
+			config.MaxCPUUsage = 1
 			config.MaxCPUUsage = 100
 			byt, _ := json.MarshalIndent(config, "", "    ")
 			ioutil.WriteFile(homeFolder, byt, 0777)
@@ -184,5 +185,12 @@ func (p *processes) DeleteAllJobs() error {
 		cancel()
 	}
 
+	return nil
+}
+
+func (p *processes) IsJobResourceValid(jobMinMemory, jobMinCPU int) error {
+	if jobMinMemory > p.maxMemUsage || jobMinCPU > p.maxCPUUsage {
+		return simperr.NewError().ResourceOverflow().Message("job requested for too many resources").Build()
+	}
 	return nil
 }

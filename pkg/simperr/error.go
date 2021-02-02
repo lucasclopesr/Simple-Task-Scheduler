@@ -64,6 +64,12 @@ func (b *ErrorBuilder) DoesNotExist() *ErrorBuilder {
 	return b
 }
 
+// ResourceOverflow indica que um job requisitou mais do que os recursos disponíveis
+func (b *ErrorBuilder) ResourceOverflow() *ErrorBuilder {
+	b.err.Code = ErrorResourceOverflow
+	return b
+}
+
 // Códigos de erro comuns
 const (
 	ErrorNotFound = iota
@@ -72,4 +78,5 @@ const (
 	ErrorMemoryLimit
 	ErrorJobLimit
 	ErrorBadRequest
+	ErrorResourceOverflow
 )
