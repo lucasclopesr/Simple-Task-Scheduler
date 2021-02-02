@@ -13,8 +13,8 @@ func deleteQueueCallback(cmd *cobra.Command, args []string) {
 // DeleteQueueCommand is a command to delete all jobs on queue
 var DeleteQueueCommand = *&cobra.Command{
 	Aliases: []string{"new"},
-	Long:    "delete all jobs on queue in the simpd",
-	Short:   "delete all jobs on queue in the simpd",
+	Long:    "deleta todos os jobs na fila do STS",
+	Short:   "deleta todos os jobs na fila do STS",
 	Run:     deleteQueueCallback,
 	Use:     "deleteQueue",
 }
