@@ -139,3 +139,15 @@ func (pq *SimpQueueManager) GetFrontJob() meta.Job {
 	ret := pq.Pop()
 	return *(ret.(*meta.Job))
 }
+
+// ReturnAllQueuedJobs retorna todos os jobs que estão na fila de prioridades
+func (pq *SimpQueueManager) ReturnAllQueuedJobs() ([]meta.Job, error) {
+	var jobList []meta.Job
+	if pq.Len() > 0 {
+		for _, jobPtr := range pq.simpQueue.Queue {
+			jobList = append(jobList, *jobPtr)
+		}
+		return jobList, nil
+	}
+	return nil, simperr.NewError().BadRequest().Message("there are no jobs in the priority queue").Build()
+}

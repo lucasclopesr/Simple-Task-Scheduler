@@ -9,14 +9,14 @@ import (
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/simperr"
 )
 
-// NewJobHandler creates a job handler to allocate resources for jobs
+// NewJobHandler cria um job handler para alocar recursos para os jobs
 func NewJobHandler() handlers.JobHandler {
 	return &jobHandler{}
 }
 
 type jobHandler struct{}
 
-// CreateJob validates job and inserts into queue
+// CreateJob valida um job e o insere na fila de prioridades
 func (j jobHandler) CreateJob(s string, jr meta.JobRequest) error {
 	if _, err := memory.GetJob(s); err == nil {
 		return simperr.NewError().AlreadyExists().Build()
@@ -30,44 +30,60 @@ func (j jobHandler) CreateJob(s string, jr meta.JobRequest) error {
 	return err
 }
 
-// DeleteJob deletes a job from queue
-func (j jobHandler) DeleteJob(s string) error {
-	if _, err := memory.GetJob(s); err != nil {
-		return simperr.NewError().DoesNotExist().Build()
+// DeleteExecutingJob deleta job da fila de prioridades, caso exista. Caso contrário,
+// retorna um erro.
+func (j jobHandler) DeleteJobFromQueue(s string) error {
+	_, err := queue.GetQueueManager().DeleteJobFromQueue(s)
+	if err != nil {
+		return err
 	}
-	queue := queue.GetQueueManager()
-	_, err := queue.DeleteJobFromQueue(s)
 	memory.DeleteJob(s)
-	return err
+	return nil
 }
 
-// GetJob finds job of ID s and returns in the format meta.Job
-func (j jobHandler) GetJob(s string) (job meta.Job, err error) {
+// GetJob retorna job com o ID dado. Caso o job não exista, retorna erro
+func (j jobHandler) GetJob(jobID string) (job meta.Job, err error) {
 
-	if job, err = memory.GetJob(s); err != nil {
+	if job, err = memory.GetJob(jobID); err != nil {
 		return job, simperr.NewError().DoesNotExist().Build()
 	}
 	return job, err
 }
 
-// GetExecutingJobs returns all currently executing jobs in the format meta.job
+// GetExecutingJobs retorna todos os jobs em execução
 func (j jobHandler) GetExecutingJobs() ([]meta.Job, error) {
 	ret := []meta.Job{}
 	return ret, nil // Todo: implement
 }
 
-// DeleteExecutingJobs deletes all currently executing jobs
+// DeleteExecutingJobs deleta todos os jobs em execução
 func (j *jobHandler) DeleteExecutingJobs() error {
 	return nil // Todo: implement
 }
 
-// GetQueuedJobs returns all jobs currently in queue
+// GetQueuedJobs retorna todos os jobs que se encontram na Fila de Prioridades.
+// Caso a fila esteja vazia, retorna um erro.
 func (j jobHandler) GetQueuedJobs() ([]meta.Job, error) {
-	ret := []meta.Job{}
-	return ret, nil // Todo: implement
+	ret, err := queue.GetQueueManager().ReturnAllQueuedJobs()
+
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
-// DeleteQueuedJobs deletes all jobs currently in queue
+// DeleteQueuedJobs deleta todos os jobs da fila de prioridades
 func (j *jobHandler) DeleteQueuedJobs() error {
 	return nil // Todo: implement
+}
+
+// DeleteExecutingJob deleta job em execução, caso exista. Caso contrário,
+// retorna um erro.
+func (j jobHandler) DeleteExecutingJob(jobID string) error {
+	err := processes.GetProcessManager().DeleteJob(jobID)
+	if err != nil {
+		return err
+	}
+	memory.DeleteJob(jobID)
+	return nil
 }

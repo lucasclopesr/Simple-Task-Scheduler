@@ -12,6 +12,7 @@ import (
 	"github.com/lucasclopesr/Simple-Task-Scheduler/cmd/simpd/memory"
 	"github.com/lucasclopesr/Simple-Task-Scheduler/cmd/simpd/queue"
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/meta"
+	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/simperr"
 )
 
 // ProcessManager é a interface que define os métodos do gerenciador de processos
@@ -19,6 +20,7 @@ type ProcessManager interface {
 	Run(ctx context.Context, wg *sync.WaitGroup)
 	GetJob(id string) (meta.Job, error)
 	CreateFirstJob()
+	DeleteJob(jobID string) error
 }
 
 var pm ProcessManager
@@ -37,15 +39,16 @@ func GetProcessManager() ProcessManager {
 
 		usr, err := user.Current()
 		homeFolder := fmt.Sprintf("%s/.simp/config.json", usr.HomeDir)
-		println(homeFolder)
 		configFile, err := ioutil.ReadFile(homeFolder)
 
 		if err == nil {
 			err = json.Unmarshal(configFile, &config)
 		} else {
-			panic("Config file not found!")
+			config.MaxCPUUsage = 100
+			config.MaxCPUUsage = 100
+			byt, _ := json.MarshalIndent(config, "", "    ")
+			ioutil.WriteFile(homeFolder, byt, 0777)
 		}
-
 		pm = newProcessManager(config.MaxMemUsage, config.MaxCPUUsage)
 	}
 	return pm
@@ -53,15 +56,16 @@ func GetProcessManager() ProcessManager {
 
 func newProcessManager(maxMemUsage int, maxCPUUsage int) ProcessManager {
 	return &processes{
-		maxMemUsage:   maxMemUsage,
-		curMemUsage:   0,
-		maxCPUUsage:   maxCPUUsage,
-		curCPUUsage:   0,
-		release:       make(chan bool),
-		Mutex:         sync.Mutex{},
-		queue:         queue.GetQueueManager(),
-		hasJobInFront: make(chan bool),
-		processQueue:  make(chan meta.Job),
+		maxMemUsage:         maxMemUsage,
+		curMemUsage:         0,
+		maxCPUUsage:         maxCPUUsage,
+		curCPUUsage:         0,
+		release:             make(chan bool),
+		Mutex:               sync.Mutex{},
+		queue:               queue.GetQueueManager(),
+		hasJobInFront:       make(chan bool),
+		processQueue:        make(chan meta.Job),
+		processesContextMap: make(map[string]context.CancelFunc),
 	}
 }
 
@@ -75,6 +79,7 @@ type processes struct {
 	queue         queue.PQInterface
 	hasJobInFront chan bool
 	sync.Mutex
+	processesContextMap map[string]context.CancelFunc
 }
 
 func (p *processes) CreateFirstJob() {
@@ -113,12 +118,21 @@ func (p *processes) GetJob(jobID string) (job meta.Job, err error) {
 func (p *processes) startJob(ctx context.Context, job meta.Job) {
 	p.curCPUUsage += job.MinCPU
 	p.curMemUsage += job.MinMemory
-	go func() {
-		cmd := exec.CommandContext(ctx, job.ProcessName, job.ProcessParams...)
-		cmd.Dir = job.WorkingDirectory
+	jobCxt, jobCancel := context.WithCancel(ctx)
 
-		_, err := cmd.CombinedOutput()
-		if err != nil {
+	p.processesContextMap[job.ID] = jobCancel
+
+	go func() {
+		cmd := exec.CommandContext(jobCxt, job.ProcessName, job.ProcessParams...)
+		cmd.Dir = job.WorkingDirectory
+		done := make(chan error, 1)
+		go func() {
+			err := cmd.Run()
+			done <- err
+		}()
+
+		err := <-done
+		if err != nil && err.Error() != "signal: killed" {
 			fmt.Println(err)
 		}
 		p.releaseJob(job)
@@ -130,5 +144,19 @@ func (p *processes) releaseJob(job meta.Job) {
 	defer p.Unlock()
 	p.curCPUUsage -= job.MinCPU
 	p.curMemUsage -= job.MinMemory
+	delete(p.processesContextMap, job.ID)
 	memory.DeleteJob(job.ID)
+}
+
+// DeleteJob cancela o contexto de execução de um job e, assim, encerra sua execução
+func (p *processes) DeleteJob(jobID string) error {
+	p.Lock()
+	defer p.Unlock()
+	if cancel, ok := p.processesContextMap[jobID]; ok {
+		cancel()
+	} else {
+		return simperr.NewError().DoesNotExist().Message("couldn't find job for given ID").Build()
+	}
+
+	return nil
 }
