@@ -2,7 +2,6 @@ package queue
 
 import (
 	"container/heap"
-	"fmt"
 	"sync"
 
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/meta"
@@ -29,8 +28,6 @@ func (pq *SimpQueueManager) Swap(job1Index, job2Index int) {
 	job1ID := pq.simpQueue.Queue[job1Index].ID
 	job2ID := pq.simpQueue.Queue[job2Index].ID
 
-	pq.Lock()
-	defer pq.Unlock()
 	pq.simpQueue.Queue[job1Index], pq.simpQueue.Queue[job2Index] = pq.simpQueue.Queue[job2Index], pq.simpQueue.Queue[job1Index]
 	pq.simpQueue.Queue[job1Index].Index = job1Index
 	pq.simpQueue.Queue[job2Index].Index = job2Index
@@ -89,7 +86,6 @@ func (pq *SimpQueueManager) InsertJobIntoQueue(job meta.Job) error {
 	defer pq.Unlock()
 
 	heap.Push(pq, &job)
-	fmt.Println("fila na hora de inserir: ", pq.simpQueue.Queue)
 	return nil
 }
 
@@ -100,13 +96,11 @@ func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (meta.Job, error) {
 		return meta.Job{}, err
 	}
 
-	fmt.Println("CHEGAQUI")
-	// pq.Lock()
-	// defer pq.Unlock()
+	pq.Lock()
+	defer pq.Unlock()
 
 	index := pq.simpQueue.IndexList[jobID]
 	removedJob := heap.Remove(pq, index).(*meta.Job)
-	fmt.Println("DELETE!")
 	delete(pq.simpQueue.IndexList, jobID)
 
 	return *removedJob, nil
@@ -136,26 +130,26 @@ func (pq *SimpQueueManager) UpdateQueuedJob(job meta.Job) error {
 }
 
 // GetFrontJob retorna o primeiro job da fila
-func (pq *SimpQueueManager) GetFrontJob() meta.Job {
-	ret := pq.simpQueue.Queue[len(pq.simpQueue.Queue)-1]
-	fmt.Println("GETFRONT!")
+func (pq *SimpQueueManager) FrontJob() meta.Job {
+	return *pq.simpQueue.Queue[pq.Len()-1]
+}
+
+// GetFrontJob retorna o primeiro job da fila
+func (pq *SimpQueueManager) PopJob() meta.Job {
+	ret := pq.Pop().(*meta.Job)
 	return *ret
 }
 
 // ReturnAllQueuedJobs retorna todos os jobs que estão na fila de prioridades
 func (pq *SimpQueueManager) ReturnAllQueuedJobs() ([]meta.Job, error) {
 	var jobList []meta.Job
-	fmt.Println("pq len", pq.simpQueue.Queue)
 
 	if pq.Len() > 0 {
-		fmt.Println("antes do for")
 		for _, jobPtr := range pq.simpQueue.Queue {
-			fmt.Println("depois do for")
 			jobList = append(jobList, *jobPtr)
 		}
 		return jobList, nil
 	}
 
-	fmt.Println("wtf mermao")
 	return nil, simperr.NewError().BadRequest().Message("there are no jobs in the priority queue").Build()
 }
