@@ -11,7 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -75,16 +75,7 @@ func (s *Server) serve(ctx context.Context) (err error) {
 }
 
 // Run roda o servidor
-func (s *Server) Run() error {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	go func() {
-		oscall := <-c
-		log.Printf("system call:%+v", oscall)
-		cancel()
-	}()
+func (s *Server) Run(ctx context.Context, wg *sync.WaitGroup) error {
+	defer wg.Done()
 	return s.serve(ctx)
 }

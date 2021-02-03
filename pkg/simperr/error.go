@@ -29,6 +29,12 @@ func (b *ErrorBuilder) Message(msg string) *ErrorBuilder {
 	return b
 }
 
+// Code define o código do SimpError
+func (b *ErrorBuilder) Code(code int) *ErrorBuilder {
+	b.err.Code = code
+	return b
+}
+
 // Build retorna o SimpError criado
 func (b *ErrorBuilder) Build() *SimpError {
 	return b.err
@@ -46,10 +52,23 @@ func (b *ErrorBuilder) BadRequest() *ErrorBuilder {
 	return b
 }
 
+// AlreadyExists define o tipo de erro a ser usado quando um job que está sendo inserido já existe
+func (b *ErrorBuilder) AlreadyExists() *ErrorBuilder {
+	b.err.Code = ErrorAlreadyExists
+	return b
+}
+
+// DoesNotExist define o tipo de erro a ser usado ao tentar excluir ou recuperar um job que não existe
+func (b *ErrorBuilder) DoesNotExist() *ErrorBuilder {
+	b.err.Code = ErrorDoesNotExist
+	return b
+}
+
 // Códigos de erro comuns
 const (
 	ErrorNotFound = iota
 	ErrorAlreadyExists
+	ErrorDoesNotExist
 	ErrorMemoryLimit
 	ErrorJobLimit
 	ErrorBadRequest

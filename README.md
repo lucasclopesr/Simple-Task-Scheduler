@@ -25,3 +25,88 @@ O **Simple Task Scheduler** é um sistema para automatização de alocação de 
 - Planejamento:
 
   - Nossas tarefas estão organizadas em um modelo Kanban, localizado no [GitHub Projects deste repositório](https://github.com/lucasclopesr/Simple-Task-Scheduler/projects/1).
+
+## Estrutura do sistema
+
+O Simple Task Scheduler é estruturado em três módulos principais: 
+
+- Uma interface via linha de comando (CLI) para envio dos _jobs_, consultas aos _jobs_ em execução e na fila de _jobs_ em espera por recursos;
+- Um módulo de gerência de recursos, cuja responsabilidade é verificar a disponibilidade de recursos, receber os _jobs_ e inserí-os na fila e enviar os _jobs_ para serem executados no sistema operacional.
+- Um _daemon_ que é executado como um serviço do sistema, em segundo plano, cuja responsabilidade é prover uma API REST (utilizando um _socket_ UNIX) para comunicação entre a CLI e o gerenciador de recursos;
+
+A imagem a seguir mostra um esquema da arquitetura do sistema.
+
+<img src="./images/simp-arch.png"/>
+
+## Execução
+
+Como a arquitetura segue um modelo de cliente-servidor, a execução do sistema requer que o _daemon_ esteja sempre em execução, em segundo plano, para que o executável da CLI consiga fazer requisições. Portanto, são necessários dois executáveis, que podem ser gerados a partir do código neste repositório.
+
+- Para gerar o executável do _daemon_, basta executar:
+
+```bash
+$ cd cmd/simpd
+$ go build .
+# O executável será gerado na pasta cmd/simpd, com o nome simpd
+```
+
+Em seguida, para executar o _daemon_, basta invocar o executável gerado na etapa anterior:
+
+```bash
+$ ./simpd
+2021/01/31 14:30:40 Listening...
+```
+
+Detalhe: o serviço `simpd` permite que o usuário especifique quanto recurso (CPU, memória RAM) está disponível para que os _jobs_ submetidos através dele utilizem. Ele lê essas configurações do arquivo `~/.simp/config.json`. Caso ele não encontre o arquivo, ele gera um com valores padrão. O arquivo deve ter o seguinte formato:
+
+```json
+{
+  "maxMemUsage": 100,
+  "maxCPUUsage": 4
+}
+```
+
+
+
+- Para gerar o executável da CLI, basta executar:
+
+```bash
+$ cd cmd/simp
+$ go build .
+# O executável será gerado na pasta cmd/simp, com o nome simp
+```
+
+Para enviar _jobs_ ao Simple Task Scheduler, utilize o executável `simp` gerado na etapa anterior. Consulte os comandos disponíveis utilizando a _flag_ `--help`:
+
+```bash
+$ ./simp --help
+Usage:
+   [command]
+
+Available Commands:
+  create              cria um novo job no STS
+  deleteExecutingJob  deleta um job em execução no STS
+  deleteExecutingJobs deleta todos os jobs em execução no STS
+  deleteJobFromQueue  deleta um job na fila do STS
+  deleteQueue         deleta todos os jobs na fila do STS
+  getExecutingJob     retorna um job em execução no STS
+  getExecutingJobs    retorna todos os jobs em execução no STS
+  getJobFromQueue     retorna um job na fila do STS
+  getQueuedJobs       retorna todos os jobs na fila do STS
+  help                Help about any command
+
+Flags:
+  -a, --args stringArray   Argumentos do job que será criado (Array de Strings)
+  -c, --cpu int            Mínimo de CPU disponível para a execução do job (0-100) (default 50)
+  -h, --help               help for this command
+  -i, --job_id string      ID do job que será criado (Inteiro) (default "no-id")
+  -m, --mem int            Mínimo de memória disponível para execução do job (0-100) (default 50)
+  -n, --name string        Caminho absoluto para o binário do job (String)
+  -p, --priority int       Prioridade do job que será criado (0-1-2) (default 1)
+  -w, --work_dir string    Diretório de trabalho do job (String)
+
+Use " [command] --help" for more information about a command.
+```
+
+
+

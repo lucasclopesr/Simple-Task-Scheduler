@@ -2,6 +2,7 @@ package queue
 
 import (
 	"container/heap"
+	"sync"
 
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/meta"
 )
@@ -10,6 +11,7 @@ import (
 // para manipulação da Fila de Prioridades definidos pela interfaze PQInterface
 type SimpQueueManager struct {
 	simpQueue *meta.PriorityQueue
+	sync.Mutex
 }
 
 var simpPQ *SimpQueueManager
@@ -27,6 +29,9 @@ func GetQueueManager() PQInterface {
 
 func newQueueManager() *SimpQueueManager {
 	return &SimpQueueManager{
-		simpQueue: &meta.PriorityQueue{},
+		simpQueue: &meta.PriorityQueue{
+			Queue:     []*meta.Job{},
+			IndexList: make(map[string]int),
+		},
 	}
 }
