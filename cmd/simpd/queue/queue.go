@@ -129,12 +129,12 @@ func (pq *SimpQueueManager) UpdateQueuedJob(job meta.Job) error {
 	return nil
 }
 
-// GetFrontJob retorna o primeiro job da fila
+// FrontJob retorna o primeiro job da fila
 func (pq *SimpQueueManager) FrontJob() meta.Job {
 	return *pq.simpQueue.Queue[pq.Len()-1]
 }
 
-// GetFrontJob retorna o primeiro job da fila
+// PopJob retorna o primeiro job da fila
 func (pq *SimpQueueManager) PopJob() meta.Job {
 	ret := pq.Pop().(*meta.Job)
 	return *ret
