@@ -1,8 +1,6 @@
 package jobhandler
 
 import (
-	"fmt"
-
 	"github.com/lucasclopesr/Simple-Task-Scheduler/cmd/simpd/api/handlers"
 	"github.com/lucasclopesr/Simple-Task-Scheduler/cmd/simpd/memory"
 	"github.com/lucasclopesr/Simple-Task-Scheduler/cmd/simpd/processes"
@@ -31,7 +29,6 @@ func (j jobHandler) CreateJob(s string, jr meta.JobRequest) error {
 	}
 	queue := queue.GetQueueManager()
 	err = queue.InsertJobIntoQueue(jr.Job)
-	fmt.Println("Inseriu na fila caraio HEHEHEHE")
 	if queue.Len() == 1 {
 		processes.GetProcessManager().CreateFirstJob()
 	}
@@ -76,9 +73,7 @@ func (j *jobHandler) DeleteExecutingJobs() error {
 // GetQueuedJobs retorna todos os jobs que se encontram na Fila de Prioridades.
 // Caso a fila esteja vazia, retorna um erro.
 func (j jobHandler) GetQueuedJobs() ([]meta.Job, error) {
-	fmt.Println("get queued jobs antes!!!")
 	ret, err := queue.GetQueueManager().ReturnAllQueuedJobs()
-	fmt.Println("get queued jobs depois!!!", err)
 
 	if err != nil {
 		return nil, err
@@ -95,9 +90,7 @@ func (j *jobHandler) DeleteQueuedJobs() error {
 		return err
 	}
 
-	fmt.Println("ret", ret)
 	for _, job := range ret {
-		fmt.Println("jobID", job.ID)
 		_, err = queue.GetQueueManager().DeleteJobFromQueue(job.ID)
 		memory.DeleteJob(job.ID)
 
