@@ -66,7 +66,7 @@ func (pq *SimpQueueManager) Pop() interface{} {
 func (pq *SimpQueueManager) GetJobFromQueue(jobID string) (job meta.Job, err error) {
 	jobIndex, exists := pq.simpQueue.IndexList[jobID]
 	if !exists {
-		return meta.Job{}, simperr.NewError().NotFound().Message("coundn't find job " + jobID + " in queue").Build()
+		return meta.Job{}, simperr.NewError().NotFound().Message("job de id " + jobID + " não está na fila").Build()
 	}
 	job = *pq.simpQueue.Queue[jobIndex]
 	job.Index = -1
@@ -115,7 +115,7 @@ func (pq *SimpQueueManager) UpdateQueuedJob(job meta.Job) error {
 	}
 
 	if oldJob.Index != job.Index {
-		return simperr.NewError().BadRequest().Message("can't change a job's Index attribute").Build()
+		return simperr.NewError().BadRequest().Message("não é permitido mudar o index de um job").Build()
 	}
 
 	pq.Lock()
@@ -151,5 +151,5 @@ func (pq *SimpQueueManager) ReturnAllQueuedJobs() ([]meta.Job, error) {
 		return jobList, nil
 	}
 
-	return nil, simperr.NewError().BadRequest().Message("there are no jobs in the priority queue").Build()
+	return nil, simperr.NewError().BadRequest().Message("a fila está vazia").Build()
 }

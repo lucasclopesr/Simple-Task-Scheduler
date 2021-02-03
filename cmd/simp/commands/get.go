@@ -17,6 +17,8 @@ func getJobFromQueueCallback(cmd *cobra.Command, args []string) {
 		for _, job := range jobs {
 			job.PrintJob()
 		}
+	} else if params.jobID == "" {
+		fmt.Println("Parâmetro all não setado e job id não identificado.")
 	} else {
 		job, err = client.GetJobFromQueue(params.jobID)
 		if err == nil {
@@ -37,6 +39,8 @@ func getExecutingJobCallback(cmd *cobra.Command, args []string) {
 		for _, currJob := range jobs {
 			currJob.PrintJob()
 		}
+	} else if params.jobID == "" {
+		fmt.Println("Parâmetro all não setado e job id não identificado.")
 	} else {
 		job, err = client.GetExecutingJob(params.jobID)
 		if err == nil {
@@ -65,7 +69,7 @@ var GetJobFromQueueCommand = cobra.Command{
 
 // GetExecutingJobCommand is a command to get a job
 var GetExecutingJobCommand = cobra.Command{
-	Aliases: []string{"e"},
+	Aliases: []string{"e", "execute", "running"},
 	Long:    "retorna jobs em execução no STS",
 	Short:   "retorna jobs em execução no STS",
 	Run:     getExecutingJobCallback,

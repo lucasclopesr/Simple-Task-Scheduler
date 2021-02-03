@@ -21,17 +21,16 @@ func createJobCallback(cmd *cobra.Command, args []string) {
 			WorkingDirectory: params.workingDirectory,
 		},
 	}, params.jobID)
-	fmt.Printf("Create job = " + params.jobID + "\n")
-	fmt.Printf("MinCPU =  %d\n", params.minCPU)
-	fmt.Printf("MinMemory =  %d\n", params.minMemory)
 	if err != nil {
 		fmt.Println(err.Error())
+	} else {
+		fmt.Printf("Job %s criado\n", params.jobID)
 	}
 }
 
 // CreateJobCommand is a command to create a job
 var CreateJobCommand = cobra.Command{
-	Aliases: []string{"new"},
+	Aliases: []string{"new", "run"},
 	Long:    "cria um novo job no STS",
 	Short:   "cria um novo job no STS",
 	Run:     createJobCallback,
