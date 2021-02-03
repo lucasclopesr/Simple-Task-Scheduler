@@ -29,13 +29,17 @@ func (c *Client) sendRequest(route string, body []byte, method string) ([]byte, 
 		return nil, err
 	}
 	response, err := c.httpClient.Do(req)
+	var respBytes []byte
+	if response.Body != nil {
+
+		respBytes, err = ioutil.ReadAll(response.Body)
+	}
 	if err != nil {
 		return nil, err
 	}
 	if response.StatusCode != 200 {
-		return nil, simperr.NewError().Code(response.StatusCode).Build()
+		return respBytes, simperr.NewError().Code(response.StatusCode).Message(response.Status).Build()
 	}
-	respBytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -45,18 +49,23 @@ func (c *Client) sendRequest(route string, body []byte, method string) ([]byte, 
 // CreateJob cria um job no simp daemon
 func (c *Client) CreateJob(request meta.JobRequest, id string) error {
 	body, _ := json.Marshal(request)
-	_, err := c.sendRequest("queue/"+id, body, "POST")
+	resp, err := c.sendRequest("queue/"+id, body, "POST")
+
 	if err != nil {
-		return simperr.NewError().Message(err.Error()).NotFound().Build()
+		errNew := simperr.SimpError{}
+		json.Unmarshal(resp, &errNew)
+		return &errNew
 	}
 	return nil
 }
 
 // DeleteExecutingJob sends a request to delete a job in the simp daemon
 func (c *Client) DeleteExecutingJob(id string) error {
-	_, err := c.sendRequest("job/"+id, nil, "DELETE")
+	resp, err := c.sendRequest("job/"+id, nil, "DELETE")
 	if err != nil {
-		return simperr.NewError().Message(err.Error()).NotFound().Build()
+		errNew := simperr.SimpError{}
+		json.Unmarshal(resp, &errNew)
+		return &errNew
 	}
 	return nil
 }
@@ -77,7 +86,9 @@ func (c *Client) DeleteJobFromQueue(id string) error {
 func (c *Client) GetExecutingJob(id string) (job meta.Job, err error) {
 	resp, err := c.sendRequest("job/"+id, nil, "GET")
 	if err != nil {
-		return job, simperr.NewError().Message(err.Error()).NotFound().Build()
+		errNew := simperr.SimpError{}
+		json.Unmarshal(resp, &errNew)
+		return meta.Job{}, &errNew
 	}
 	json.Unmarshal(resp, &job)
 	return
@@ -87,10 +98,9 @@ func (c *Client) GetExecutingJob(id string) (job meta.Job, err error) {
 func (c *Client) GetJobFromQueue(id string) (job meta.Job, err error) {
 	resp, err := c.sendRequest("queue/"+id, nil, "GET")
 	if err != nil {
-		return meta.Job{}, &simperr.SimpError{
-			Code:    simperr.ErrorNotFound,
-			Message: err.Error(),
-		}
+		errNew := simperr.SimpError{}
+		json.Unmarshal(resp, &errNew)
+		return meta.Job{}, &errNew
 	}
 	json.Unmarshal(resp, &job)
 	return
@@ -100,7 +110,9 @@ func (c *Client) GetJobFromQueue(id string) (job meta.Job, err error) {
 func (c *Client) GetExecutingJobs() (jobs []meta.Job, err error) {
 	resp, err := c.sendRequest("jobs", nil, "GET")
 	if err != nil {
-		return nil, simperr.NewError().Message(err.Error()).NotFound().Build()
+		errNew := simperr.SimpError{}
+		json.Unmarshal(resp, &errNew)
+		return nil, err
 	}
 	json.Unmarshal(resp, &jobs)
 	return
@@ -110,7 +122,9 @@ func (c *Client) GetExecutingJobs() (jobs []meta.Job, err error) {
 func (c *Client) GetQueuedJobs() (jobs []meta.Job, err error) {
 	resp, err := c.sendRequest("queued", nil, "GET")
 	if err != nil {
-		return nil, simperr.NewError().Message(err.Error()).NotFound().Build()
+		errNew := simperr.SimpError{}
+		json.Unmarshal(resp, &errNew)
+		return nil, err
 	}
 	json.Unmarshal(resp, &jobs)
 	return
@@ -118,18 +132,22 @@ func (c *Client) GetQueuedJobs() (jobs []meta.Job, err error) {
 
 // DeleteQueue deleta os jobs enfilerados no simp daemon
 func (c *Client) DeleteQueue() error {
-	_, err := c.sendRequest("queued", nil, "DELETE")
+	resp, err := c.sendRequest("queued", nil, "DELETE")
 	if err != nil {
-		return simperr.NewError().Message(err.Error()).NotFound().Build()
+		errNew := simperr.SimpError{}
+		json.Unmarshal(resp, &errNew)
+		return &errNew
 	}
 	return nil
 }
 
 // DeleteExecutingJobs deleta os jobs que estão sendo executados no simp daemon
 func (c *Client) DeleteExecutingJobs() error {
-	_, err := c.sendRequest("jobs", nil, "DELETE")
+	resp, err := c.sendRequest("jobs", nil, "DELETE")
 	if err != nil {
-		return simperr.NewError().Message(err.Error()).NotFound().Build()
+		errNew := simperr.SimpError{}
+		json.Unmarshal(resp, &errNew)
+		return &errNew
 	}
 	return nil
 }

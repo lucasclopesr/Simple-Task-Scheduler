@@ -25,7 +25,7 @@ func (j jobHandler) CreateJob(s string, jr meta.JobRequest) error {
 	}
 
 	if _, err = memory.GetJob(s); err == nil {
-		return simperr.NewError().AlreadyExists().Build()
+		return simperr.NewError().AlreadyExists().Message("job de id " + s + " já existente").Build()
 	}
 	queue := queue.GetQueueManager()
 	err = queue.InsertJobIntoQueue(jr.Job)
@@ -51,7 +51,7 @@ func (j jobHandler) DeleteJobFromQueue(s string) error {
 func (j jobHandler) GetJob(jobID string) (job meta.Job, err error) {
 
 	if job, err = memory.GetJob(jobID); err != nil {
-		return job, simperr.NewError().DoesNotExist().Build()
+		return job, err
 	}
 	return job, err
 }

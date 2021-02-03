@@ -103,14 +103,16 @@ func (p *processes) Run(ctx context.Context, wg *sync.WaitGroup) {
 			newJob := p.queue.FrontJob()
 
 			// esperar recursos o suficientes serem liberados
-			if p.curMemUsage+newJob.MinMemory > p.maxMemUsage || p.curCPUUsage+newJob.MinCPU > p.maxCPUUsage {
+			for p.curMemUsage+newJob.MinMemory > p.maxMemUsage || p.curCPUUsage+newJob.MinCPU > p.maxCPUUsage {
 				p.locked = true
 				<-p.release
 				p.locked = false
 			}
+
 			if p.queue.FrontJob().ID != newJob.ID {
 				continue
 			}
+
 			p.processQueue <- p.queue.PopJob()
 			<-p.nextJob
 		}
@@ -191,7 +193,7 @@ func (p *processes) DeleteJob(jobID string) error {
 	if cancel, ok := p.processesContextMap[jobID]; ok {
 		cancel()
 	} else {
-		return simperr.NewError().DoesNotExist().Message("couldn't find job for given ID").Build()
+		return simperr.NewError().DoesNotExist().Message("job de id " + jobID + " não encontrado").Build()
 	}
 
 	return nil
@@ -209,7 +211,7 @@ func (p *processes) DeleteAllJobs() error {
 
 func (p *processes) IsJobResourceValid(jobMinMemory, jobMinCPU int) error {
 	if jobMinMemory > p.maxMemUsage || jobMinCPU > p.maxCPUUsage {
-		return simperr.NewError().ResourceOverflow().Message("job requested for too many resources").Build()
+		return simperr.NewError().ResourceOverflow().Message("recurso de job inviável").Build()
 	}
 	return nil
 }

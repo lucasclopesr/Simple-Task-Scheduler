@@ -16,7 +16,13 @@ func deleteJobFromQueueCallback(cmd *cobra.Command, args []string) {
 	}
 
 	if err == nil {
-		fmt.Printf("Job de ID " + params.jobID + " removido da fila\n")
+		if params.all {
+			fmt.Println("Todos os jobs da fila foram removidos")
+		} else if params.jobID == "" {
+			fmt.Println("Parâmetro all não setado e job id não identificado.")
+		} else {
+			fmt.Printf("Job de ID " + params.jobID + " removido da fila\n")
+		}
 	} else {
 		fmt.Println(err)
 	}
@@ -32,7 +38,13 @@ func deleteExecutingJobCallback(cmd *cobra.Command, args []string) {
 	}
 
 	if err == nil {
-		fmt.Printf("Job de ID " + params.jobID + " cancelado\n")
+		if params.all {
+			fmt.Println("Todos os jobs em execução foram cancelados")
+		} else if params.jobID == "" {
+			fmt.Println("Parâmetro all não setado e job id não identificado.")
+		} else {
+			fmt.Printf("Job de ID " + params.jobID + " cancelado\n")
+		}
 	} else {
 		fmt.Println(err)
 	}
@@ -40,7 +52,7 @@ func deleteExecutingJobCallback(cmd *cobra.Command, args []string) {
 
 // Delete is a command to delete a job
 var Delete = cobra.Command{
-	Aliases: []string{"del"},
+	Aliases: []string{"del", "remove"},
 	Long:    "deleta jobs na fila ou em execução",
 	Short:   "deleta jobs na fila ou em execução",
 	Use:     "delete",
@@ -57,7 +69,7 @@ var DeleteQueue = cobra.Command{
 
 // DeleteExecuting is a command to delete a job
 var DeleteExecuting = cobra.Command{
-	Aliases: []string{"e"},
+	Aliases: []string{"e", "executing", "running"},
 	Long:    "deleta jobs em execução",
 	Short:   "deleta jobs execução",
 	Run:     deleteExecutingJobCallback,
