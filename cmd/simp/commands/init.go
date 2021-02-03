@@ -29,8 +29,8 @@ func Init(cl api.ClientInterface) {
 
 	workingDir, _ := os.Getwd()
 
-	CreateJobCommand.Flags().StringVarP(&params.jobID, "job_id", "i", "no-id", "ID do job que será criado (Inteiro)")
-	CreateJobCommand.MarkFlagRequired("job_id")
+	CreateJobCommand.Flags().StringVarP(&params.jobID, "id", "i", "no-id", "ID do job que será criado (Inteiro)")
+	CreateJobCommand.MarkFlagRequired("id")
 	// simpCommand.TraverseChildren = true
 
 	CreateJobCommand.Flags().IntVarP(&params.priority, "priority", "p", 1, "Prioridade do job que será criado (0-1-2)")
@@ -42,15 +42,15 @@ func Init(cl api.ClientInterface) {
 	CreateJobCommand.Flags().IntVarP(&params.minCPU, "cpu", "c", 1, "Mínimo de CPU disponível para a execução do job (0-100)")
 	CreateJobCommand.Flags().StringVarP(&params.workingDirectory, "work_dir", "w", workingDir, "Diretório de trabalho do job (String)")
 
-	DeleteQueue.Flags().StringVarP(&params.jobID, "job_id", "i", "no-id", "ID do job que será criado (Inteiro)")
+	DeleteQueue.Flags().StringVarP(&params.jobID, "id", "i", "no-id", "ID do job que será criado (Inteiro)")
 	DeleteQueue.Flags().BoolVarP(&params.all, "all", "a", false, "Aplicar a todos os jobs")
-	DeleteExecuting.Flags().StringVarP(&params.jobID, "job_id", "i", "no-id", "ID do job que será criado (Inteiro)")
+	DeleteExecuting.Flags().StringVarP(&params.jobID, "id", "i", "no-id", "ID do job que será criado (Inteiro)")
 	DeleteExecuting.Flags().BoolVarP(&params.all, "all", "a", false, "Aplicar a todos os jobs")
 	Delete.AddCommand(&DeleteQueue, &DeleteExecuting)
 
-	GetJobFromQueueCommand.Flags().StringVarP(&params.jobID, "job_id", "i", "no-id", "ID do job que será criado (Inteiro)")
+	GetJobFromQueueCommand.Flags().StringVarP(&params.jobID, "id", "i", "no-id", "ID do job que será criado (Inteiro)")
 	GetJobFromQueueCommand.Flags().BoolVarP(&params.all, "all", "a", false, "Aplicar a todos os jobs")
-	GetExecutingJobCommand.Flags().StringVarP(&params.jobID, "job_id", "i", "no-id", "ID do job que será criado (Inteiro)")
+	GetExecutingJobCommand.Flags().StringVarP(&params.jobID, "id", "i", "no-id", "ID do job que será criado (Inteiro)")
 	GetExecutingJobCommand.Flags().BoolVarP(&params.all, "all", "a", false, "Aplicar a todos os jobs")
 	GetJobs.AddCommand(&GetJobFromQueueCommand, &GetExecutingJobCommand)
 
