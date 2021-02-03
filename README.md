@@ -40,6 +40,12 @@ A imagem a seguir mostra um esquema da arquitetura do sistema.
 
 ## Execução
 
+Para instalar direto no seu sistema (dentro do path) rode a seguinte linha de código:
+
+```bash
+curl https://raw.githubusercontent.com/lucasclopesr/Simple-Task-Scheduler/main/scripts/install.sh | bash
+```
+
 Como a arquitetura segue um modelo de cliente-servidor, a execução do sistema requer que o _daemon_ esteja sempre em execução, em segundo plano, para que o executável da CLI consiga fazer requisições. Portanto, são necessários dois executáveis, que podem ser gerados a partir do código neste repositório.
 
 - Para gerar o executável do _daemon_, basta executar:
