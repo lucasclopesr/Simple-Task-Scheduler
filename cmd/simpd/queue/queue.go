@@ -2,6 +2,7 @@ package queue
 
 import (
 	"container/heap"
+	"fmt"
 	"sync"
 
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/meta"
@@ -88,6 +89,7 @@ func (pq *SimpQueueManager) InsertJobIntoQueue(job meta.Job) error {
 	defer pq.Unlock()
 
 	heap.Push(pq, &job)
+	fmt.Println("fila na hora de inserir: ", pq.simpQueue.Queue)
 	return nil
 }
 
@@ -98,11 +100,13 @@ func (pq *SimpQueueManager) DeleteJobFromQueue(jobID string) (meta.Job, error) {
 		return meta.Job{}, err
 	}
 
-	pq.Lock()
-	defer pq.Unlock()
+	fmt.Println("CHEGAQUI")
+	// pq.Lock()
+	// defer pq.Unlock()
 
 	index := pq.simpQueue.IndexList[jobID]
 	removedJob := heap.Remove(pq, index).(*meta.Job)
+	fmt.Println("DELETE!")
 	delete(pq.simpQueue.IndexList, jobID)
 
 	return *removedJob, nil
@@ -133,21 +137,25 @@ func (pq *SimpQueueManager) UpdateQueuedJob(job meta.Job) error {
 
 // GetFrontJob retorna o primeiro job da fila
 func (pq *SimpQueueManager) GetFrontJob() meta.Job {
-	pq.Lock()
-	defer pq.Unlock()
-
-	ret := pq.Pop()
-	return *(ret.(*meta.Job))
+	ret := pq.simpQueue.Queue[len(pq.simpQueue.Queue)-1]
+	fmt.Println("GETFRONT!")
+	return *ret
 }
 
 // ReturnAllQueuedJobs retorna todos os jobs que estão na fila de prioridades
 func (pq *SimpQueueManager) ReturnAllQueuedJobs() ([]meta.Job, error) {
 	var jobList []meta.Job
+	fmt.Println("pq len", pq.simpQueue.Queue)
+
 	if pq.Len() > 0 {
+		fmt.Println("antes do for")
 		for _, jobPtr := range pq.simpQueue.Queue {
+			fmt.Println("depois do for")
 			jobList = append(jobList, *jobPtr)
 		}
 		return jobList, nil
 	}
+
+	fmt.Println("wtf mermao")
 	return nil, simperr.NewError().BadRequest().Message("there are no jobs in the priority queue").Build()
 }

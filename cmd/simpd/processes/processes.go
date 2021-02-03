@@ -47,7 +47,7 @@ func GetProcessManager() ProcessManager {
 		if err == nil {
 			err = json.Unmarshal(configFile, &config)
 		} else {
-			config.MaxCPUUsage = 1
+			config.MaxCPUUsage = 4
 			config.MaxCPUUsage = 100
 			byt, _ := json.MarshalIndent(config, "", "    ")
 			ioutil.WriteFile(homeFolder, byt, 0777)
@@ -103,8 +103,11 @@ func (p *processes) Run(ctx context.Context, wg *sync.WaitGroup) {
 		for {
 			select {
 			case newJob := <-p.processQueue:
+				fmt.Println("pediu pa para paro")
 				for p.curMemUsage+newJob.MinMemory > p.maxMemUsage || p.curCPUUsage+newJob.MinCPU > p.maxCPUUsage {
 				}
+				fmt.Println("NEW JOB CARAIO EHEHEHEHE")
+				_ = p.queue.Pop()
 				p.Lock()
 				p.startJob(ctx, newJob)
 				p.Unlock()

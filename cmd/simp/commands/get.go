@@ -13,16 +13,16 @@ func getJobFromQueueCallback(cmd *cobra.Command, args []string) {
 	var jobs []meta.Job
 
 	if params.all {
+		jobs, err = client.GetQueuedJobs()
+		for _, job := range jobs {
+			job.PrintJob()
+		}
+	} else {
 		job, err = client.GetJobFromQueue(params.jobID)
 		if err == nil {
 			job.PrintJob()
 		} else {
 			fmt.Println(err)
-		}
-	} else {
-		jobs, err = client.GetQueuedJobs()
-		for _, job := range jobs {
-			job.PrintJob()
 		}
 	}
 }
@@ -33,16 +33,16 @@ func getExecutingJobCallback(cmd *cobra.Command, args []string) {
 	var jobs []meta.Job
 
 	if params.all {
+		jobs, err = client.GetExecutingJobs()
+		for _, currJob := range jobs {
+			currJob.PrintJob()
+		}
+	} else {
 		job, err = client.GetExecutingJob(params.jobID)
 		if err == nil {
 			job.PrintJob()
 		} else {
 			fmt.Println(err)
-		}
-	} else {
-		jobs, err = client.GetExecutingJobs()
-		for _, job := range jobs {
-			job.PrintJob()
 		}
 	}
 }
