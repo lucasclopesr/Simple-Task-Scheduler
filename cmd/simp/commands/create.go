@@ -24,7 +24,9 @@ func createJobCallback(cmd *cobra.Command, args []string) {
 	fmt.Printf("Create job = " + params.jobID + "\n")
 	fmt.Printf("MinCPU =  %d\n", params.minCPU)
 	fmt.Printf("MinMemory =  %d\n", params.minMemory)
-	fmt.Println(err)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }
 
 // CreateJobCommand is a command to create a job
