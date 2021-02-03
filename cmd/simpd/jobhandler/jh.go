@@ -18,11 +18,17 @@ type jobHandler struct{}
 
 // CreateJob valida um job e o insere na fila de prioridades
 func (j jobHandler) CreateJob(s string, jr meta.JobRequest) error {
-	if _, err := memory.GetJob(s); err == nil {
+	var err error
+
+	if err = processes.GetProcessManager().IsJobResourceValid(jr.Job.MinMemory, jr.Job.MinCPU); err != nil {
+		return err
+	}
+
+	if _, err = memory.GetJob(s); err == nil {
 		return simperr.NewError().AlreadyExists().Build()
 	}
 	queue := queue.GetQueueManager()
-	err := queue.InsertJobIntoQueue(jr.Job)
+	err = queue.InsertJobIntoQueue(jr.Job)
 	if queue.Len() == 1 {
 		processes.GetProcessManager().CreateFirstJob()
 	}
@@ -85,7 +91,12 @@ func (j *jobHandler) DeleteQueuedJobs() error {
 	}
 
 	for _, job := range ret {
-		processes.GetProcessManager().DeleteJob(job.ID)
+		_, err = queue.GetQueueManager().DeleteJobFromQueue(job.ID)
+		memory.DeleteJob(job.ID)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

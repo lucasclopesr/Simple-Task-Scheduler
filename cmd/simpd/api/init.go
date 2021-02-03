@@ -14,7 +14,7 @@ func (s *Server) Init(jobHandler handlers.JobHandler) {
 	).Methods("GET", "DELETE")
 
 	s.router.HandleFunc("/queued",
-		handlers.JSON(handlers.HandleQueue),
+		handlers.JSON(handlers.HandleQueued),
 	).Methods("GET", "DELETE")
 
 	s.router.HandleFunc("/queue/{id_job}",

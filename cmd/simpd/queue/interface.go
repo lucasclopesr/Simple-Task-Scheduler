@@ -14,6 +14,7 @@ type PQInterface interface {
 	InsertJobIntoQueue(job meta.Job) error
 	DeleteJobFromQueue(jobID string) (meta.Job, error)
 	UpdateQueuedJob(job meta.Job) error
-	GetFrontJob() meta.Job
+	FrontJob() meta.Job
+	PopJob() meta.Job
 	ReturnAllQueuedJobs() ([]meta.Job, error)
 }

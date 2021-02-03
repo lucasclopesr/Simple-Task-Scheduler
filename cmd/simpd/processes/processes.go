@@ -23,6 +23,7 @@ type ProcessManager interface {
 	DeleteJob(jobID string) error
 	DeleteAllJobs() error
 	GetAllJobs() ([]meta.Job, error)
+	IsJobResourceValid(jobMinMemory, jobMinCPU int) error
 }
 
 var pm ProcessManager
@@ -46,7 +47,7 @@ func GetProcessManager() ProcessManager {
 		if err == nil {
 			err = json.Unmarshal(configFile, &config)
 		} else {
-			config.MaxCPUUsage = 100
+			config.MaxCPUUsage = 4
 			config.MaxCPUUsage = 100
 			byt, _ := json.MarshalIndent(config, "", "    ")
 			ioutil.WriteFile(homeFolder, byt, 0777)
@@ -62,12 +63,14 @@ func newProcessManager(maxMemUsage int, maxCPUUsage int) ProcessManager {
 		curMemUsage:         0,
 		maxCPUUsage:         maxCPUUsage,
 		curCPUUsage:         0,
-		release:             make(chan bool),
+		release:             make(chan bool, 10),
 		Mutex:               sync.Mutex{},
 		queue:               queue.GetQueueManager(),
-		hasJobInFront:       make(chan bool),
+		hasJobInFront:       make(chan bool, 1),
 		processQueue:        make(chan meta.Job),
 		processesContextMap: make(map[string]context.CancelFunc),
+		locked:              false,
+		nextJob:             make(chan bool),
 	}
 }
 
@@ -81,6 +84,8 @@ type processes struct {
 	queue         queue.PQInterface
 	hasJobInFront chan bool
 	sync.Mutex
+	locked              bool
+	nextJob             chan bool
 	processesContextMap map[string]context.CancelFunc
 }
 
@@ -91,10 +96,23 @@ func (p *processes) CreateFirstJob() {
 func (p *processes) Run(ctx context.Context, wg *sync.WaitGroup) {
 	go func() {
 		for {
+			// caso não tenha jobs na fila, espera ser liberado por um job novo
 			if p.queue.Len() == 0 {
 				<-p.hasJobInFront
 			}
-			p.processQueue <- p.queue.GetFrontJob()
+			newJob := p.queue.FrontJob()
+
+			// esperar recursos o suficientes serem liberados
+			if p.curMemUsage+newJob.MinMemory > p.maxMemUsage || p.curCPUUsage+newJob.MinCPU > p.maxCPUUsage {
+				p.locked = true
+				<-p.release
+				p.locked = false
+			}
+			if p.queue.FrontJob().ID != newJob.ID {
+				continue
+			}
+			p.processQueue <- p.queue.PopJob()
+			<-p.nextJob
 		}
 	}()
 	go func() {
@@ -102,11 +120,10 @@ func (p *processes) Run(ctx context.Context, wg *sync.WaitGroup) {
 		for {
 			select {
 			case newJob := <-p.processQueue:
-				for p.curMemUsage+newJob.MinMemory > p.maxMemUsage || p.curCPUUsage+newJob.MinCPU > p.maxCPUUsage {
-				}
 				p.Lock()
 				p.startJob(ctx, newJob)
 				p.Unlock()
+				p.nextJob <- true
 			case <-ctx.Done():
 				return
 			}
@@ -157,11 +174,14 @@ func (p *processes) startJob(ctx context.Context, job meta.Job) {
 
 func (p *processes) releaseJob(job meta.Job) {
 	p.Lock()
-	defer p.Unlock()
 	p.curCPUUsage -= job.MinCPU
 	p.curMemUsage -= job.MinMemory
 	delete(p.processesContextMap, job.ID)
 	memory.DeleteJob(job.ID)
+	p.Unlock()
+	if p.locked {
+		p.release <- true
+	}
 }
 
 // DeleteJob cancela o contexto de execução de um job e, assim, encerra sua execução
@@ -184,5 +204,12 @@ func (p *processes) DeleteAllJobs() error {
 		cancel()
 	}
 
+	return nil
+}
+
+func (p *processes) IsJobResourceValid(jobMinMemory, jobMinCPU int) error {
+	if jobMinMemory > p.maxMemUsage || jobMinCPU > p.maxCPUUsage {
+		return simperr.NewError().ResourceOverflow().Message("job requested for too many resources").Build()
+	}
 	return nil
 }
