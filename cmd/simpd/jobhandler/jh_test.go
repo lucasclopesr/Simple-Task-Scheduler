@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/lucasclopesr/Simple-Task-Scheduler/cmd/simpd/api/handlers"
+	"github.com/lucasclopesr/Simple-Task-Scheduler/cmd/simpd/memory"
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/meta"
 )
 
@@ -13,10 +14,12 @@ func TestNewJobHandler(t *testing.T) {
 		name string
 		want handlers.JobHandler
 	}{
-		/*{
+		{
 			name: "Teste instanciação",
-			want: &jobHandler{},
-		},*/
+			want: &jobHandler{
+				mem: memory.GetMemory(),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -38,9 +41,11 @@ func Test_jobHandler_CreateJob(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		/*{
+		{
 			name: "Teste criação de Job",
-			j:    jobHandler{},
+			j: jobHandler{
+				mem: memory.GetMemory(),
+			},
 			args: args{
 				s: "ID1",
 				jr: meta.JobRequest{
@@ -49,7 +54,7 @@ func Test_jobHandler_CreateJob(t *testing.T) {
 				},
 			},
 			wantErr: false,
-		},*/
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -71,29 +76,34 @@ func Test_jobHandler_DeleteJob(t *testing.T) {
 		wantErr bool
 		init    *meta.JobRequest
 	}{
-		/*{
+		{
 			name: "Teste deletar job",
-			j:    jobHandler{},
+			j: jobHandler{
+				mem: memory.GetMemory(),
+			},
 			args: args{
-				s: "ID1",
+				s: "0",
 			},
 			init: &meta.JobRequest{
 				User: "usuario-teste",
 				Job: meta.Job{
-					ID: "ID1",
+					ID: "0",
 				},
 			},
 			wantErr: false,
-		},*/
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
 			if tt.init != nil {
 				tt.j.CreateJob(tt.args.s, *tt.init)
 			}
 
-			if err := tt.j.DeleteJobFromQueue(tt.args.s); (err != nil) != tt.wantErr {
-				t.Errorf("jobHandler.DeleteJob() error = %v, wantErr %v", err, tt.wantErr)
+			err := tt.j.DeleteJobFromQueue(tt.args.s)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("jobHandler.GetJob() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
 		})
 	}
@@ -110,20 +120,22 @@ func Test_jobHandler_GetJob(t *testing.T) {
 		wantErr bool
 		init    *meta.JobRequest
 	}{
-		/*{
+		{
 			name: "Teste recuperar job",
-			j:    jobHandler{},
+			j: jobHandler{
+				mem: memory.GetMemory(),
+			},
 			args: args{
-				s: "ID1",
+				s: "0",
 			},
 			init: &meta.JobRequest{
 				User: "usuario-teste",
 				Job: meta.Job{
-					ID: "ID1",
+					ID: "0",
 				},
 			},
 			wantErr: false,
-		},*/
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
