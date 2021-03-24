@@ -1,3 +1,10 @@
+/* Funções testadas - Francisco:
+-> Swap
+-> Push
+-> GetJobFromQueue
+-> DeleteJobFromQueue
+*/
+
 package queue
 
 import (
