@@ -9,15 +9,10 @@ package queue
 
 import (
 	"container/heap"
-	"sync"
 
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/meta"
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/simperr"
 )
-
-// lock é um mutex que será usado para garantir a execução correta
-// de funções que alteram a estrutura da fila e dos jobs inseridos nela
-var lock sync.Mutex
 
 // Len retorna o tamanho da Fila (quantos jobs estão nela)
 func (pq *SimpQueueManager) Len() int {

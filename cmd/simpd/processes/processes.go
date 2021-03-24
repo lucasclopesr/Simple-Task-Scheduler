@@ -41,11 +41,17 @@ func GetProcessManager() ProcessManager {
 		config := Conf{}
 
 		usr, err := user.Current()
+		if err != nil {
+			panic(err)
+		}
 		homeFolder := fmt.Sprintf("%s/.simp/config.json", usr.HomeDir)
 		configFile, err := ioutil.ReadFile(homeFolder)
 
 		if err == nil {
 			err = json.Unmarshal(configFile, &config)
+			if err != nil {
+				panic(err)
+			}
 		} else {
 			config.MaxCPUUsage = 4
 			config.MaxCPUUsage = 100
@@ -71,6 +77,7 @@ func newProcessManager(maxMemUsage int, maxCPUUsage int) ProcessManager {
 		processesContextMap: make(map[string]context.CancelFunc),
 		locked:              false,
 		nextJob:             make(chan bool),
+		mem:                 memory.GetMemory(),
 	}
 }
 
@@ -87,6 +94,7 @@ type processes struct {
 	locked              bool
 	nextJob             chan bool
 	processesContextMap map[string]context.CancelFunc
+	mem                 memory.Memory
 }
 
 func (p *processes) CreateFirstJob() {
@@ -134,7 +142,7 @@ func (p *processes) Run(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 func (p *processes) GetJob(jobID string) (job meta.Job, err error) {
-	return memory.GetJob(jobID)
+	return p.mem.GetJob(jobID)
 }
 
 func (p *processes) GetAllJobs() (ret []meta.Job, err error) {
@@ -142,7 +150,7 @@ func (p *processes) GetAllJobs() (ret []meta.Job, err error) {
 	defer p.Unlock()
 
 	for id := range p.processesContextMap {
-		job, err := memory.GetJob(id)
+		job, err := p.mem.GetJob(id)
 
 		if err != nil {
 			return nil, err
@@ -179,7 +187,7 @@ func (p *processes) releaseJob(job meta.Job) {
 	p.curCPUUsage -= job.MinCPU
 	p.curMemUsage -= job.MinMemory
 	delete(p.processesContextMap, job.ID)
-	memory.DeleteJob(job.ID)
+	p.mem.DeleteJob(job.ID)
 	p.Unlock()
 	if p.locked {
 		p.release <- true

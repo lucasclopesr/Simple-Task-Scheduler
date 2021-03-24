@@ -11,10 +11,14 @@ import (
 
 // NewJobHandler cria um job handler para alocar recursos para os jobs
 func NewJobHandler() handlers.JobHandler {
-	return &jobHandler{}
+	return &jobHandler{
+		memory.GetMemory(),
+	}
 }
 
-type jobHandler struct{}
+type jobHandler struct {
+	mem memory.Memory
+}
 
 // CreateJob valida um job e o insere na fila de prioridades
 func (j jobHandler) CreateJob(s string, jr meta.JobRequest) error {
@@ -24,7 +28,7 @@ func (j jobHandler) CreateJob(s string, jr meta.JobRequest) error {
 		return err
 	}
 
-	if _, err = memory.GetJob(s); err == nil {
+	if _, err = j.mem.GetJob(s); err == nil {
 		return simperr.NewError().AlreadyExists().Message("job de id " + s + " já existente").Build()
 	}
 	queue := queue.GetQueueManager()
@@ -32,7 +36,7 @@ func (j jobHandler) CreateJob(s string, jr meta.JobRequest) error {
 	if queue.Len() == 1 {
 		processes.GetProcessManager().CreateFirstJob()
 	}
-	memory.CreateJob(s, jr.Job)
+	j.mem.CreateJob(s, jr.Job)
 	return err
 }
 
@@ -43,14 +47,14 @@ func (j jobHandler) DeleteJobFromQueue(s string) error {
 	if err != nil {
 		return err
 	}
-	memory.DeleteJob(s)
+	j.mem.DeleteJob(s)
 	return nil
 }
 
 // GetJob retorna job com o ID dado. Caso o job não exista, retorna erro
 func (j jobHandler) GetJob(jobID string) (job meta.Job, err error) {
 
-	if job, err = memory.GetJob(jobID); err != nil {
+	if job, err = j.mem.GetJob(jobID); err != nil {
 		return job, err
 	}
 	return job, err
@@ -92,7 +96,7 @@ func (j *jobHandler) DeleteQueuedJobs() error {
 
 	for _, job := range ret {
 		_, err = queue.GetQueueManager().DeleteJobFromQueue(job.ID)
-		memory.DeleteJob(job.ID)
+		j.mem.DeleteJob(job.ID)
 
 		if err != nil {
 			return err

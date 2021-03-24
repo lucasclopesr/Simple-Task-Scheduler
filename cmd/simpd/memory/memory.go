@@ -7,11 +7,25 @@ import (
 	"github.com/lucasclopesr/Simple-Task-Scheduler/pkg/simperr"
 )
 
-var mem map[string]meta.Job = make(map[string]meta.Job)
 var lock sync.Mutex
+var m memory
+
+type memory map[string]meta.Job
+type Memory interface {
+	CreateJob(string, meta.Job) error
+	DeleteJob(string) error
+	GetJob(string) (meta.Job, error)
+}
+
+func GetMemory() Memory {
+	if m == nil {
+		m = make(memory)
+	}
+	return m
+}
 
 // CreateJob adiciona um Job na memória compartilhada de jobs
-func CreateJob(id string, job meta.Job) error {
+func (mem memory) CreateJob(id string, job meta.Job) error {
 	lock.Lock()
 	defer lock.Unlock()
 	if _, ok := mem[id]; ok {
@@ -22,7 +36,7 @@ func CreateJob(id string, job meta.Job) error {
 }
 
 // DeleteJob remove um Job da memória compartilhada de jobs
-func DeleteJob(id string) error {
+func (mem memory) DeleteJob(id string) error {
 	lock.Lock()
 	defer lock.Unlock()
 	if _, ok := mem[id]; !ok {
@@ -33,7 +47,7 @@ func DeleteJob(id string) error {
 }
 
 // GetJob recupera um Job da memória compartilhada de jobs
-func GetJob(id string) (meta.Job, error) {
+func (mem memory) GetJob(id string) (meta.Job, error) {
 	lock.Lock()
 	defer lock.Unlock()
 	if _, ok := mem[id]; !ok {
